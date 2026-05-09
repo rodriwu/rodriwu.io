@@ -19,3 +19,4 @@ yarn-error.log*
 
 # vercel
 .vercel
+public/ambient.mp4

@@ -88,7 +88,7 @@ export default function Desktop() {
   const audioRef = useRef<HTMLAudioElement | null>(null);
 
   useEffect(() => {
-    const audio = new Audio("/ambient.mp4");
+    const audio = new Audio("https://695p4tymotasdrfh.public.blob.vercel-storage.com/ambient.mp4");
     audio.loop = true;
     audio.volume = 0.35;
     audioRef.current = audio;

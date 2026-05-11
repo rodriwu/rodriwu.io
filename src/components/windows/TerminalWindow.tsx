@@ -13,6 +13,77 @@ const isLink = (l: Line): l is LinkLine => typeof l === "object";
 function renderTextLine(line: string): React.ReactNode {
   if (line === "") return "\u00a0"; // keep empty rows from collapsing
 
+  // Claude Code banner box lines
+  if (line.startsWith("╭") || line.startsWith("╰")) {
+    return <span style={{ color: "rgba(232,121,92,0.75)" }}>{line}</span>;
+  }
+  if (line.startsWith("│")) {
+    const inner = line.slice(1, -1);
+    const starIdx = inner.indexOf("✻");
+    if (starIdx !== -1) {
+      const before = inner.slice(0, starIdx);
+      const star = "✻";
+      const rest = inner.slice(starIdx + 1);
+      // split "  Claude Code" from "claude-sonnet-4-6  "
+      const modelMatch = rest.match(/^(.+?)\s{2,}(claude-\S+)\s*$/);
+      if (modelMatch) {
+        return (
+          <>
+            <span style={{ color: "rgba(232,121,92,0.75)" }}>{"│"}</span>
+            <span style={{ color: "rgba(255,255,255,0.25)" }}>{before}</span>
+            <span style={{ color: "rgba(232,121,92,0.9)" }}>{star}</span>
+            <span style={{ color: "rgba(255,255,255,0.9)", fontWeight: 600 }}>{modelMatch[1]}</span>
+            <span style={{ color: "rgba(255,255,255,0.25)" }}>{"                       "}</span>
+            <span style={{ color: "rgba(180,140,255,0.7)" }}>{modelMatch[2]}</span>
+            <span style={{ color: "rgba(255,255,255,0.25)" }}>{"  │"}</span>
+          </>
+        );
+      }
+    }
+    return <span style={{ color: "rgba(232,121,92,0.75)" }}>{line}</span>;
+  }
+  // Claude banner body lines
+  if (line.trim() === "Tips for getting started:") {
+    return <span style={{ color: "rgba(255,255,255,0.45)" }}>{line}</span>;
+  }
+  if (/^\s+\d+\. /.test(line)) {
+    const match = line.match(/^(\s+)(\d+\.)(\s+)(.+)$/);
+    if (match) {
+      const [, indent, num, sp, text] = match;
+      return (
+        <>
+          <span>{indent}</span>
+          <span style={{ color: "rgba(232,121,92,0.7)" }}>{num}</span>
+          <span>{sp}</span>
+          <span style={{ color: "rgba(255,255,255,0.55)" }}>{text}</span>
+        </>
+      );
+    }
+  }
+  if (line.trim().startsWith("cwd:")) {
+    const [key, ...rest] = line.split(":");
+    return (
+      <>
+        <span style={{ color: "rgba(255,255,255,0.3)" }}>{key}{":" }</span>
+        <span style={{ color: "rgba(100,210,130,0.7)" }}>{rest.join(":")}</span>
+      </>
+    );
+  }
+
+  // Claude error line
+  if (line.startsWith("Error: no Anthropic") || line.startsWith("Error: sin acceso")) {
+    return <span style={{ color: "rgba(255,90,80,0.8)" }}>{line}</span>;
+  }
+  // Claude mode prompt echo
+  if (line.startsWith("> ")) {
+    return (
+      <>
+        <span style={{ color: "rgba(232,121,92,0.8)" }}>{">"}</span>
+        <span style={{ color: "rgba(255,255,255,0.65)" }}>{line.slice(1)}</span>
+      </>
+    );
+  }
+
   // $ command echo  →  green $ + cyan command + white args
   if (line.startsWith("$ ")) {
     const rest = line.slice(2);
@@ -153,6 +224,22 @@ function renderTextLine(line: string): React.ReactNode {
   return <span style={{ color: "rgba(255,255,255,0.72)" }}>{line}</span>;
 }
 
+/* ── Claude Code banner ── */
+const CLAUDE_BANNER = [
+  "╭──────────────────────────────────────────────────────────╮",
+  "│ ✻  Claude Code                        claude-sonnet-4-6  │",
+  "╰──────────────────────────────────────────────────────────╯",
+  "",
+  "  Tips for getting started:",
+  "",
+  "    1. Ask Claude to edit a file, fix a bug, or write tests.",
+  "    2. Run /help to see all commands.",
+  "    3. Be specific about what you want Claude to do.",
+  "",
+  "  cwd: ~/rodriwu.io",
+  "",
+];
+
 /* ── Ask flow state ── */
 type AskStep =
   | null
@@ -176,6 +263,7 @@ const T = {
       "  work        — work philosophy",
       "  sysinfo     — system information",
       "  ask         — leave me a question or message",
+      "  claude      — open Claude Code",
       "  clear       — clear terminal",
     ],
     sysinfo: [
@@ -237,6 +325,7 @@ const T = {
     askFail:     "Failed to send. Try rodriwuu@gmail.com directly.",
     askEmpty:    "Message was empty. Ask cancelled.",
     askCancelled:"(ask cancelled)",
+    claudeError: "Error: no Anthropic API access in this environment.",
     notFound:    "command not found:",
   },
   es: {
@@ -251,6 +340,7 @@ const T = {
       "  work        — filosofía de trabajo",
       "  sysinfo     — información del sistema",
       "  ask         — déjame una pregunta o mensaje",
+      "  claude      — abrir Claude Code",
       "  clear       — limpiar terminal",
     ],
     sysinfo: [
@@ -312,6 +402,7 @@ const T = {
     askFail:     "No se pudo enviar. Escríbeme a rodriwuu@gmail.com.",
     askEmpty:    "El mensaje estaba vacío. Cancelado.",
     askCancelled:"(ask cancelado)",
+    claudeError: "Error: sin acceso a la API de Anthropic en este entorno.",
     notFound:    "comando no encontrado:",
   },
 } as const;
@@ -324,6 +415,7 @@ export default function TerminalWindow({ locale = "en" }: { locale?: Locale }) {
   const [history, setHistory] = useState<string[]>([]);
   const [histIdx, setHistIdx] = useState(-1);
   const [askStep, setAskStep] = useState<AskStep>(null);
+  const [claudeMode, setClaudeMode] = useState(false);
   const bottomRef = useRef<HTMLDivElement>(null);
   const inputRef = useRef<HTMLInputElement>(null);
 
@@ -332,6 +424,7 @@ export default function TerminalWindow({ locale = "en" }: { locale?: Locale }) {
   }, [lines]);
 
   const prompt =
+    claudeMode              ? ">"      :
     askStep === null        ? "$"      :
     askStep.step === "name" ? "name >" :
     askStep.step === "email"? "email>" :
@@ -339,6 +432,15 @@ export default function TerminalWindow({ locale = "en" }: { locale?: Locale }) {
 
   const runCommand = (cmd: string) => {
     const trimmed = cmd.trim();
+
+    /* ── Claude mode — any input is an error ── */
+    if (claudeMode) {
+      if (trimmed === "") { setInput(""); return; }
+      setClaudeMode(false);
+      setLines((prev) => [...prev, `> ${cmd}`, "", t.claudeError, ""]);
+      setInput("");
+      return;
+    }
 
     /* ── Ask multi-step flow ── */
     if (askStep !== null) {
@@ -377,6 +479,11 @@ export default function TerminalWindow({ locale = "en" }: { locale?: Locale }) {
 
     if (lower === "clear") {
       setLines(initialLines);
+    } else if (lower === "claude") {
+      setLines([...newLines, ...CLAUDE_BANNER]);
+      setClaudeMode(true);
+      setInput("");
+      return;
     } else if (lower === "ask") {
       setLines([...newLines, "", t.askStart, t.askName]);
       setAskStep({ step: "name" });
@@ -406,6 +513,10 @@ export default function TerminalWindow({ locale = "en" }: { locale?: Locale }) {
   const handleKeyDown = (e: React.KeyboardEvent) => {
     if (e.key === "Enter") {
       runCommand(input);
+    } else if (e.key === "Escape" && claudeMode) {
+      setClaudeMode(false);
+      setLines((prev) => [...prev, "(claude exited)", ""]);
+      setInput("");
     } else if (e.key === "Escape" && askStep !== null) {
       setAskStep(null);
       setLines((prev) => [...prev, t.askCancelled, ""]);
@@ -457,7 +568,7 @@ export default function TerminalWindow({ locale = "en" }: { locale?: Locale }) {
         className="flex items-center gap-2 pt-2"
         style={{ borderTop: "1px solid rgba(255,255,255,0.08)" }}
       >
-        <span style={{ color: askStep ? "rgba(180,140,255,0.7)" : "rgba(255,255,255,0.4)", fontFamily: "monospace", fontSize: 12, whiteSpace: "nowrap" }}>{prompt}</span>
+        <span style={{ color: claudeMode ? "rgba(232,121,92,0.8)" : askStep ? "rgba(180,140,255,0.7)" : "rgba(255,255,255,0.4)", fontFamily: "monospace", fontSize: 12, whiteSpace: "nowrap" }}>{prompt}</span>
         <input
           ref={inputRef}
           value={input}

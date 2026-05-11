@@ -1,8 +1,8 @@
 "use client";
 
 import { useRef, useState } from "react";
-import { animate, motion, useMotionValue } from "framer-motion";
-import { FileText, Mail, Trash2, type LucideIcon } from "lucide-react";
+import { motion, useMotionValue } from "framer-motion";
+import { FileText, Mail, type LucideIcon } from "lucide-react";
 
 export interface DesktopItem {
   id: string;
@@ -15,7 +15,6 @@ export const DESKTOP_ITEMS: DesktopItem[] = [
   { id: "resume",  icon: FileText, label: "Resume.pdf"  },
   { id: "contact", icon: Mail,     label: "Contact"     },
   { id: "gimp",    icon: null,     label: "GIMP 2.10",  desktopOnly: true },
-  { id: "flappy",  icon: null,     label: "Flappy Bird" },
 ];
 
 // Starting column positions (x from desktop left, y from desktop top)
@@ -23,14 +22,8 @@ const INITIAL_POSITIONS: Record<string, { x: number; y: number }> = {
   resume:  { x: 72, y: 24  },
   contact: { x: 72, y: 120 },
   gimp:    { x: 72, y: 216 },
-  flappy:  { x: 72, y: 312 },
 };
 
-// Trash can — anchored near bottom-left, not in DESKTOP_ITEMS
-const TRASH_X = 72;
-const TRASH_W = 80;
-const TRASH_H = 80;
-const TRASH_BOTTOM = 28; // px from bottom of desktop area
 
 interface DesktopIconsProps {
   onOpen: (id: string) => void;
@@ -41,23 +34,66 @@ interface DesktopIconsProps {
 
 export default function DesktopIcons({ onOpen, canvasW = 1440, canvasH = 900, dimmed = false }: DesktopIconsProps) {
   const [selected, setSelected] = useState<string | null>(null);
-  const [trashHovered, setTrashHovered] = useState(false);
-  const [errorVisible, setErrorVisible] = useState(false);
   const handleSelect = (id: string | null) => setSelected(id);
-  const isMobile = canvasW < 768;
+  const isMobile = canvasW < 1024;
   const visibleItems = DESKTOP_ITEMS.filter(item => !isMobile || !item.desktopOnly);
+  void canvasH;
 
-  // Desktop area height = canvasH - 20 (inset: 10 on each side)
-  const desktopH = canvasH - 20;
-  const trashActualY = desktopH - TRASH_BOTTOM - TRASH_H;
+  // ── Mobile: horizontal dock row at the top of content area ──
+  if (isMobile) {
+    return (
+      <div
+        className="absolute inset-0 pointer-events-none"
+        style={{ opacity: (!isMobile && dimmed) ? 0.12 : 1, transition: "opacity 0.4s ease" }}
+      >
+        <div
+          style={{
+            position: "absolute",
+            top: 18,
+            left: 68,
+            right: 12,
+            display: "flex",
+            flexDirection: "row",
+            flexWrap: "wrap",
+            gap: 6,
+            pointerEvents: "auto",
+          }}
+        >
+          {visibleItems.map((item, i) => {
+            const Icon = item.icon;
+            return (
+              <motion.button
+                key={item.id}
+                onClick={() => onOpen(item.id)}
+                initial={{ opacity: 0, scale: 0.88 }}
+                animate={{ opacity: 1, scale: 1 }}
+                transition={{ delay: 0.08 + i * 0.06, duration: 0.25, ease: "easeOut" }}
+                className="desktop-icon flex flex-col items-center gap-1 p-1.5 rounded-xl"
+                style={{ width: 62, pointerEvents: "auto", cursor: "pointer" }}
+              >
+                <div className="icon-frame w-11 h-11 flex items-center justify-center overflow-hidden relative" style={{ borderRadius: 14 }}>
+                  {item.id === "gimp" ? (
+                    // eslint-disable-next-line @next/next/no-img-element
+                    <img src="/gimp-logo.webp" alt="GIMP" width={28} height={28} style={{ objectFit: "contain" }} />
+                  ) : item.id === "flappy" ? (
+                    // eslint-disable-next-line @next/next/no-img-element
+                    <img src="/flappy-bird.webp" alt="Flappy Bird" width={28} height={28} style={{ objectFit: "contain" }} />
+                  ) : Icon ? (
+                    <Icon size={20} strokeWidth={1.3} style={{ color: "var(--desktop-icon-text)" }} />
+                  ) : null}
+                </div>
+                <span className="icon-label font-sans text-[10px] font-medium leading-tight text-center select-none" style={{ color: "var(--desktop-icon-text)" }}>
+                  {item.label}
+                </span>
+              </motion.button>
+            );
+          })}
+        </div>
+      </div>
+    );
+  }
 
-  const handleTrashDrop = () => {
-    setErrorVisible(true);
-    setTimeout(() => setErrorVisible(false), 3400);
-  };
-
-  const trashBounds = { x: TRASH_X, y: trashActualY, w: TRASH_W, h: TRASH_H };
-
+  // ── Desktop: vertical draggable column ──
   return (
     <div
       className="absolute inset-0 pointer-events-none"
@@ -73,105 +109,8 @@ export default function DesktopIcons({ onOpen, canvasW = 1440, canvasH = 900, di
           isSelected={selected === item.id}
           onSelect={handleSelect}
           onOpen={onOpen}
-          trashBounds={trashBounds}
-          onTrashHover={setTrashHovered}
-          onTrashDrop={handleTrashDrop}
         />
       ))}
-
-      {/* Trash can — anchored bottom-left, not draggable */}
-      {!isMobile && (
-        <div
-          style={{
-            position: "absolute",
-            bottom: TRASH_BOTTOM,
-            left: TRASH_X,
-            width: TRASH_W,
-            pointerEvents: "none",
-            display: "flex",
-            flexDirection: "column",
-            alignItems: "center",
-            gap: 6,
-            padding: 8,
-          }}
-        >
-          <div
-            className="icon-frame w-12 h-12 flex items-center justify-center"
-            style={{
-              borderRadius: 12,
-              background: trashHovered ? "rgba(255,59,48,0.14)" : "transparent",
-              border: trashHovered ? "1.5px dashed rgba(255,59,48,0.5)" : "1.5px dashed rgba(255,255,255,0.13)",
-              transition: "all 0.2s ease",
-            }}
-          >
-            <Trash2
-              size={22}
-              strokeWidth={1.3}
-              style={{
-                color: trashHovered ? "rgba(255,80,70,0.88)" : "var(--desktop-icon-text)",
-                transition: "color 0.2s ease",
-              }}
-            />
-          </div>
-          <span
-            className="icon-label font-sans text-[11px] font-medium leading-tight text-center select-none"
-            style={{
-              color: trashHovered ? "rgba(255,80,70,0.88)" : "var(--desktop-icon-text)",
-              transition: "color 0.2s ease",
-            }}
-          >
-            Trash
-          </span>
-        </div>
-      )}
-
-      {/* Error toast — OS-style notification */}
-      {errorVisible && (
-        <div
-          style={{
-            position: "absolute",
-            top: 18,
-            left: "50%",
-            transform: "translateX(-50%)",
-            background: "var(--window-bg)",
-            backdropFilter: "blur(40px) saturate(160%)",
-            WebkitBackdropFilter: "blur(40px) saturate(160%)",
-            border: "1px solid var(--window-border)",
-            borderRadius: 14,
-            padding: "12px 16px",
-            pointerEvents: "none",
-            zIndex: 999,
-            boxShadow: "0 8px 28px rgba(0,0,0,0.14), 0 2px 8px rgba(0,0,0,0.08)",
-            overflow: "hidden",
-            minWidth: 260,
-          }}
-        >
-          {/* Red top accent */}
-          <div style={{
-            position: "absolute", top: 0, left: 0, right: 0, height: 1,
-            background: "linear-gradient(90deg, rgba(255,59,48,0.75) 0%, rgba(255,100,80,0.35) 60%, transparent 100%)",
-          }} />
-          <div style={{ display: "flex", alignItems: "center", gap: 11 }}>
-            <div style={{
-              width: 30, height: 30, borderRadius: "50%",
-              background: "rgba(255,59,48,0.10)",
-              border: "1px solid rgba(255,59,48,0.22)",
-              display: "flex", alignItems: "center", justifyContent: "center",
-              flexShrink: 0,
-            }}>
-              <Trash2 size={14} strokeWidth={1.6} style={{ color: "rgba(255,80,70,0.85)" }} />
-            </div>
-            <div>
-              <p className="font-mono text-[10px] font-medium" style={{ color: "var(--text-primary)", marginBottom: 3 }}>
-                permission denied
-              </p>
-              <p className="font-mono text-[9px]" style={{ color: "var(--text-tertiary)", lineHeight: 1.5 }}>
-                cannot move to /dev/null<br />not your files — not your call
-              </p>
-            </div>
-          </div>
-        </div>
-      )}
     </div>
   );
 }
@@ -184,9 +123,6 @@ interface DraggableIconProps {
   isSelected: boolean;
   onSelect: (id: string | null) => void;
   onOpen: (id: string) => void;
-  trashBounds: { x: number; y: number; w: number; h: number };
-  onTrashHover: (over: boolean) => void;
-  onTrashDrop: () => void;
 }
 
 function WilberIcon({ size = 32 }: { size?: number }) {
@@ -246,21 +182,12 @@ function FlappyBirdIcon({ size = 30 }: { size?: number }) {
   );
 }
 
-function DraggableIcon({ item, index, initX, initY, isSelected, onSelect, onOpen, trashBounds, onTrashHover, onTrashDrop }: DraggableIconProps) {
+function DraggableIcon({ item, index, initX, initY, isSelected, onSelect, onOpen }: DraggableIconProps) {
   const x = useMotionValue(initX);
   const y = useMotionValue(initY);
   const [isDragging, setIsDragging] = useState(false);
   const dragOccurred = useRef(false);
   const Icon = item.icon;
-
-  const isOverTrash = () => {
-    const cx = x.get() + 40;
-    const cy = y.get() + 40;
-    return (
-      cx >= trashBounds.x && cx <= trashBounds.x + trashBounds.w &&
-      cy >= trashBounds.y && cy <= trashBounds.y + trashBounds.h
-    );
-  };
 
   const handleClick = () => {
     if (dragOccurred.current) {
@@ -291,23 +218,9 @@ function DraggableIcon({ item, index, initX, initY, isSelected, onSelect, onOpen
       initial={{ opacity: 0, scale: 0.88 }}
       animate={{ opacity: 1, scale: 1 }}
       transition={{ delay: 0.08 + index * 0.06, duration: 0.25, ease: "easeOut" }}
-      onDragStart={() => {
-        setIsDragging(true);
-        dragOccurred.current = false;
-      }}
-      onDrag={() => {
-        dragOccurred.current = true;
-        onTrashHover(isOverTrash());
-      }}
-      onDragEnd={() => {
-        setIsDragging(false);
-        if (isOverTrash()) {
-          onTrashDrop();
-          animate(x, initX, { type: "spring", stiffness: 380, damping: 32 });
-          animate(y, initY, { type: "spring", stiffness: 380, damping: 32 });
-        }
-        onTrashHover(false);
-      }}
+      onDragStart={() => { setIsDragging(true); dragOccurred.current = false; }}
+      onDrag={() => { dragOccurred.current = true; }}
+      onDragEnd={() => { setIsDragging(false); }}
       onClick={handleClick}
       className={`desktop-icon flex flex-col items-center gap-1.5 p-2 w-[80px] rounded-xl ${
         isSelected ? "selected" : ""

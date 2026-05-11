@@ -60,16 +60,21 @@ export default function OsWindow({
   autoHeight = false,
   onMaximize,
 }: OsWindowProps) {
-  const isMobile = canvasW < 768;
+  const isMobile = canvasW < 1024;
   const TASKBAR_W = 56;
-  const CONTENT_W = (canvasW - 20) - TASKBAR_W;
-  const CONTENT_H = canvasH - 20;
-  const MAX_W = Math.min(Math.round(CONTENT_W * maxSizeFraction), maxPixelW ?? Infinity);
+  const inset = isMobile ? 0 : 10;
+  const CONTENT_W = (canvasW - inset * 2) - TASKBAR_W;
+  const CONTENT_H = canvasH - inset * 2;
+  const MAX_W = isMobile
+    ? Math.round(CONTENT_W * 0.95)
+    : Math.min(Math.round(CONTENT_W * maxSizeFraction), maxPixelW ?? Infinity);
   const MAX_H = Math.min(Math.round(CONTENT_H * maxSizeFraction), maxPixelH ?? Infinity);
-  const MAX_X = snapLeft ? TASKBAR_W + 8 : TASKBAR_W + Math.round((CONTENT_W - MAX_W) / 2);
+  const MAX_X = isMobile
+    ? TASKBAR_W + Math.round((CONTENT_W - MAX_W) / 2)
+    : (snapLeft ? TASKBAR_W + 8 : TASKBAR_W + Math.round((CONTENT_W - MAX_W) / 2));
   const MAX_Y = Math.round((CONTENT_H - MAX_H) / 2);
 
-  const [isMaximized, setIsMaximized] = useState(openMaximized);
+  const [isMaximized, setIsMaximized] = useState(openMaximized || isMobile);
   const [titlebarHovered, setTitlebarHovered] = useState(false);
   const [buttonsHovered, setButtonsHovered] = useState(false);
   const [size, setSize] = useState({ w: defaultSize.w, h: defaultSize.h });
@@ -94,7 +99,12 @@ export default function OsWindow({
   useEffect(() => {
     if (!hasMounted.current) { hasMounted.current = true; return; }
     if (isMaximized) {
-      savedPos.current = { x: x.get(), y: y.get() };
+      if (!isMobile) savedPos.current = { x: x.get(), y: y.get() };
+      animate(x, MAX_X, { type: "spring", stiffness: 380, damping: 32 });
+      animate(y, MAX_Y, { type: "spring", stiffness: 380, damping: 32 });
+    } else if (isMobile) {
+      // Mobile restore: half height, full width, stays at top
+      setSize({ w: MAX_W, h: Math.round(MAX_H * 0.5) });
       animate(x, MAX_X, { type: "spring", stiffness: 380, damping: 32 });
       animate(y, MAX_Y, { type: "spring", stiffness: 380, damping: 32 });
     } else {
@@ -102,6 +112,7 @@ export default function OsWindow({
       animate(y, savedPos.current.y, { type: "spring", stiffness: 380, damping: 32 });
     }
     onMaximize?.(isMaximized);
+  // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [isMaximized]);
 
   const startResize = (e: React.PointerEvent, dir: ResizeDir) => {
@@ -160,8 +171,8 @@ export default function OsWindow({
     window.addEventListener("pointerup", onUp);
   };
 
-  const btnSize = isMobile ? 20 : 11;
-  const iconSize = isMobile ? 10 : 6;
+  const btnSize = isMobile ? 13 : 11;
+  const iconSize = isMobile ? 7 : 6;
 
   return (
     <>
@@ -198,7 +209,7 @@ export default function OsWindow({
           backdropFilter: "blur(40px) saturate(160%)",
           WebkitBackdropFilter: "blur(40px) saturate(160%)",
           border: "1px solid var(--window-border)",
-          boxShadow: "0 12px 32px rgba(0,0,0,0.12), 0 3px 10px rgba(0,0,0,0.07), 0 0 0 0.5px rgba(255,255,255,0.04) inset",
+          boxShadow: "var(--window-shadow)",
         }}
       >
         {/* Resize handles — all 8 directions */}
@@ -244,7 +255,7 @@ export default function OsWindow({
           <div
             style={{
               display: "flex", alignItems: "center", gap: 7,
-              filter: buttonsHovered ? "saturate(1)" : "saturate(0.38) opacity(0.52)",
+              filter: isMobile ? "none" : (buttonsHovered ? "saturate(1)" : "saturate(0.38) opacity(0.52)"),
               transition: "filter 0.22s ease",
             }}
             onMouseEnter={() => setButtonsHovered(true)}
@@ -265,26 +276,28 @@ export default function OsWindow({
               }}
               className="group"
             >
-              <X size={iconSize} className="opacity-0 group-hover:opacity-100 transition-opacity" strokeWidth={2.5} style={{ color: "rgba(140,20,10,0.9)" }} aria-hidden="true" />
+              <X size={iconSize} className={isMobile ? "opacity-100" : "opacity-0 group-hover:opacity-100 transition-opacity"} strokeWidth={2.5} style={{ color: "rgba(140,20,10,0.9)" }} aria-hidden="true" />
             </button>
 
-            {/* Maximize */}
-            <button
-              onClick={() => setIsMaximized((m) => !m)}
-              aria-label={isMaximized ? `Restore ${title}` : `Maximize ${title}`}
-              style={{
-                width: btnSize, height: btnSize,
-                borderRadius: "50%",
-                background: "rgba(40,205,65,0.72)",
-                border: "none",
-                display: "flex", alignItems: "center", justifyContent: "center",
-                flexShrink: 0,
-                cursor: "pointer",
-              }}
-              className="group"
-            >
-              <Maximize2 size={iconSize} className="opacity-0 group-hover:opacity-100 transition-opacity" strokeWidth={2.5} style={{ color: "rgba(0,80,20,0.9)" }} aria-hidden="true" />
-            </button>
+            {/* Maximize — desktop only */}
+            {!isMobile && (
+              <button
+                onClick={() => setIsMaximized((m) => !m)}
+                aria-label={isMaximized ? `Restore ${title}` : `Maximize ${title}`}
+                style={{
+                  width: btnSize, height: btnSize,
+                  borderRadius: "50%",
+                  background: "rgba(40,205,65,0.72)",
+                  border: "none",
+                  display: "flex", alignItems: "center", justifyContent: "center",
+                  flexShrink: 0,
+                  cursor: "pointer",
+                }}
+                className="group"
+              >
+                <Maximize2 size={iconSize} className="opacity-0 group-hover:opacity-100 transition-opacity" strokeWidth={2.5} style={{ color: "rgba(0,80,20,0.9)" }} aria-hidden="true" />
+              </button>
+            )}
           </div>
 
           {/* Title — centered */}

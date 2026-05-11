@@ -58,6 +58,8 @@ export default function DotGrid({ isDark }: { isDark: boolean }) {
 
     setup();
 
+    const isTouchDevice = window.matchMedia("(pointer: coarse)").matches;
+
     const onMouse = (e: MouseEvent) => {
       const rect   = canvas.getBoundingClientRect();
       const scaleX = state.w / (rect.width  || 1);
@@ -68,7 +70,7 @@ export default function DotGrid({ isDark }: { isDark: boolean }) {
       };
     };
 
-    document.addEventListener("mousemove", onMouse);
+    if (!isTouchDevice) document.addEventListener("mousemove", onMouse);
 
     const frame = () => {
       const ctx = canvas.getContext("2d");
@@ -123,7 +125,7 @@ export default function DotGrid({ isDark }: { isDark: boolean }) {
 
     return () => {
       cancelAnimationFrame(state.raf);
-      document.removeEventListener("mousemove", onMouse);
+      if (!isTouchDevice) document.removeEventListener("mousemove", onMouse);
       ro.disconnect();
     };
   }, []); // run once — isDark is tracked via ref

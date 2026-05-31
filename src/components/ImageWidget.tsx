@@ -1,7 +1,7 @@
 "use client";
 
 import { useMotionValue, motion, AnimatePresence } from "framer-motion";
-import { useState, useEffect, useRef } from "react";
+import { useState, useEffect, useRef, useCallback } from "react";
 
 interface ImageWidgetProps {
   isDark: boolean;
@@ -23,12 +23,14 @@ interface ImageWidgetProps {
   widgetId?: string;
   onRegister?: (id: string, getRect: () => { x: number; y: number; w: number; h: number }, setPos: (x: number, y: number) => void) => void;
   onDragMove?: (id: string) => void;
+  onClickOpen?: () => void;
 }
 
 const DEFAULT_W = 380;
 const DEFAULT_H = 285; // 4:3
 const TASKBAR_W = 56;
 const PAD       = 20;
+const LONG_PRESS_MS = 400;
 
 export default function ImageWidget({
   isDark, src, gradient,
@@ -36,22 +38,41 @@ export default function ImageWidget({
   title = "Project", subtitle = "Case Study",
   w, h, rotate = 0, index = 1, total = 4,
   desktopOnly = false, showDots = true,
-  widgetId, onRegister, onDragMove,
+  widgetId, onRegister, onDragMove, onClickOpen,
 }: ImageWidgetProps) {
   const isMobile = canvasW < 1024;
   const isPhone  = canvasW < 768;
 
   if (isPhone && desktopOnly) return null;
 
-  // Mobile: scale down proportionally, cap at 300px wide
-  const mobScale = Math.min(1, (canvasW - TASKBAR_W - PAD * 2) / (w ?? DEFAULT_W));
-  const desktopW = w ?? DEFAULT_W;
-  const desktopH = h ?? DEFAULT_H;
-  const W = isMobile ? Math.round(desktopW * mobScale) : desktopW;
-  const H = isMobile ? Math.round(desktopH * mobScale) : desktopH;
+  const effectiveTaskbarW = isPhone ? 0 : TASKBAR_W;
+  // On mobile, use the w/h as passed (page.tsx controls sizing)
+  const W = w ?? DEFAULT_W;
+  const H = h ?? DEFAULT_H;
 
   const x = useMotionValue(initX);
   const y = useMotionValue(initY);
+
+  // ── Long-press wiggle (mobile only, iOS-style visual feedback) ──
+  const longPressTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
+  const [wiggle, setWiggle] = useState(false);
+
+  const clearLongPress = useCallback(() => {
+    if (longPressTimer.current) { clearTimeout(longPressTimer.current); longPressTimer.current = null; }
+  }, []);
+
+  const handlePointerDown = useCallback(() => {
+    if (!isMobile) return;
+    clearLongPress();
+    longPressTimer.current = setTimeout(() => {
+      setWiggle(true);
+    }, LONG_PRESS_MS);
+  }, [isMobile, clearLongPress]);
+
+  const handlePointerUp = useCallback(() => {
+    clearLongPress();
+    if (isMobile) setWiggle(false);
+  }, [isMobile, clearLongPress]);
 
   const whRef = useRef({ w: W, h: H });
   useEffect(() => { whRef.current = { w: W, h: H }; }, [W, H]);
@@ -67,17 +88,6 @@ export default function ImageWidget({
   // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [widgetId]);
 
-  const inset = isMobile ? 0 : 10;
-  const areaW = canvasW - inset * 2;
-  const areaH = canvasH - inset * 2;
-
-  const bounds = {
-    left:   TASKBAR_W + PAD,
-    right:  Math.max(TASKBAR_W + PAD, areaW - W - PAD),
-    top:    PAD,
-    bottom: areaH - H - PAD,
-  };
-
   const [hovered, setHovered] = useState(false);
 
   const dropShadow = isDark
@@ -86,14 +96,27 @@ export default function ImageWidget({
 
   return (
     <motion.div
-      drag dragMomentum={false} dragElastic={0} dragConstraints={bounds}
-      onDrag={widgetId && onDragMove ? () => onDragMove(widgetId) : undefined}
+      drag={isMobile ? false : true}
+      dragMomentum={false} dragElastic={0}
+      onDrag={!isMobile && widgetId && onDragMove ? () => onDragMove(widgetId) : undefined}
+      onPointerDown={handlePointerDown}
+      onPointerUp={handlePointerUp}
+      onPointerCancel={handlePointerUp}
       onMouseEnter={() => setHovered(true)}
       onMouseLeave={() => setHovered(false)}
-      style={{ x, y, position: "absolute", top: 0, left: 0, pointerEvents: "auto", zIndex: 19, width: W, height: H, cursor: "grab" }}
+      onTap={onClickOpen}
+      style={{
+        ...(isMobile ? {} : { x, y }),
+        position: isMobile ? "relative" : "absolute",
+        top: 0, left: 0, pointerEvents: "auto", zIndex: 19,
+        width: W, height: H,
+        cursor: isMobile ? "default" : "grab",
+        touchAction: isMobile ? "pan-y" : "none",
+        flexShrink: 0,
+      }}
       initial={{ opacity: 0, scale: 0.94, rotate }}
-      animate={{ opacity: 1, scale: 1, rotate }}
-      transition={{ duration: 0.45, ease: [0.16, 1, 0.3, 1] }}
+      animate={{ opacity: 1, scale: wiggle ? 1.03 : 1, rotate: wiggle ? [rotate - 0.8, rotate + 0.8] : rotate }}
+      transition={wiggle ? { rotate: { repeat: Infinity, repeatType: "reverse", duration: 0.15 }, scale: { duration: 0.15 } } : { duration: 0.45, ease: [0.16, 1, 0.3, 1] }}
     >
       {/* Drop shadow */}
       <motion.div
@@ -110,14 +133,15 @@ export default function ImageWidget({
           border: isDark ? "1px solid rgba(255,255,255,0.10)" : "1px solid rgba(0,0,0,0.06)",
           boxShadow: isDark ? "inset 0 1px 0 rgba(255,255,255,0.12)" : "inset 0 1px 0 rgba(255,255,255,0.88)",
           position: "relative",
+          isolation: "isolate",
         }}
       >
         {/* Image or gradient placeholder */}
         {src ? (
           <motion.img
             src={src} alt={title}
-            style={{ position: "absolute", inset: 0, width: "100%", height: "100%", objectFit: "cover", objectPosition: "top center", display: "block" }}
-            animate={{ scale: hovered ? 1.05 : 1 }}
+            style={{ position: "absolute", inset: 0, width: "100%", height: "100%", objectFit: "cover", objectPosition: "center top", display: "block" }}
+            animate={{ scale: hovered ? 1.02 : 1 }}
             transition={{ duration: 0.65, ease: [0.16, 1, 0.3, 1] }}
           />
         ) : (
@@ -158,30 +182,16 @@ export default function ImageWidget({
 
         {/* Text overlay */}
         <div style={{ position: "absolute", bottom: 0, left: 0, right: 0, padding: "0 12px 11px", zIndex: 4 }}>
-          <div style={{ fontFamily: "sans-serif", fontWeight: 700, fontSize: W < 220 ? 12 : 14, letterSpacing: "-0.02em", color: "rgba(255,255,255,0.95)", lineHeight: 1.2, marginBottom: 2 }}>
-            {title}
-          </div>
-          <div style={{ fontFamily: "monospace", fontSize: 7, letterSpacing: "0.13em", color: "rgba(255,255,255,0.48)", textTransform: "uppercase", marginBottom: 8 }}>
-            {subtitle}
-          </div>
-          <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between" }}>
-            {showDots ? (
-              <div style={{ display: "flex", gap: 3, alignItems: "center" }}>
-                {Array.from({ length: total }).map((_, i) => (
-                  <div key={i} style={{
-                    width: i === index - 1 ? 12 : 4, height: 4, borderRadius: 3,
-                    background: i === index - 1 ? "rgba(255,255,255,0.85)" : "rgba(255,255,255,0.22)",
-                    transition: "all 0.2s ease",
-                  }} />
-                ))}
-              </div>
-            ) : <div />}
+          <div style={{ display: "flex", alignItems: "flex-end", justifyContent: "space-between" }}>
+            <div style={{ fontFamily: "sans-serif", fontWeight: 700, fontSize: W < 220 ? 12 : 14, letterSpacing: "-0.02em", color: "rgba(255,255,255,0.95)", lineHeight: 1.2 }}>
+              {title}
+            </div>
             <AnimatePresence>
               {hovered && (
                 <motion.span
                   initial={{ opacity: 0, x: 5 }} animate={{ opacity: 1, x: 0 }} exit={{ opacity: 0, x: 3 }}
                   transition={{ duration: 0.2 }}
-                  style={{ fontFamily: "monospace", fontSize: 7, letterSpacing: "0.12em", textTransform: "uppercase", color: "rgba(255,255,255,0.40)" }}>
+                  style={{ fontFamily: "monospace", fontSize: 7, letterSpacing: "0.12em", textTransform: "uppercase", color: "rgba(255,255,255,0.40)", flexShrink: 0, marginLeft: 8 }}>
                   View →
                 </motion.span>
               )}

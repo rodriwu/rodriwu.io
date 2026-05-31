@@ -2,6 +2,7 @@
 
 import React, { useState } from "react";
 import { Paintbrush, Mail, Info, LayoutGrid, LayoutList, ChevronRight } from "lucide-react";
+import { CASE_STUDIES as CS_DATA } from "@/data/caseStudies";
 
 /* ── Apps ── */
 interface DesktopApp {
@@ -18,18 +19,28 @@ const DESKTOP_APPS: DesktopApp[] = [
   { id: "gimp",    label: "GIMP",    gradient: "linear-gradient(145deg,var(--desktop-icon-bg),var(--desktop-icon-hover-bg))", Icon: Paintbrush, img: "/gimp-logo.webp" },
 ];
 
-/* ── Case Studies ── */
+/* ── Case Studies — sourced from data/caseStudies.ts ── */
 interface CaseStudy {
   id: string;
   label: string;
   img: string;
   tag: string;
   year: string;
+  accent: string;
+  role: string;
+  metric?: string;
 }
 
-const CASE_STUDIES: CaseStudy[] = [
-  { id: "moving-place", label: "Moving Place", img: "/mp-preview.webp", tag: "Brand Identity", year: "2024" },
-];
+const CASE_STUDIES: CaseStudy[] = CS_DATA.map((cs) => ({
+  id: cs.id,
+  label: cs.shortTitle,
+  img: cs.cover,
+  tag: cs.tags[0] ?? "",
+  year: cs.year.split("–")[0].split("—")[0].trim(),
+  accent: cs.accent,
+  role: cs.role.split(",")[0].trim(),
+  metric: cs.metrics[0] ? `${cs.metrics[0].value} ${cs.metrics[0].label}` : undefined,
+}));
 
 /* ── Squircle icon ── */
 const SQUIRCLE = "22%";
@@ -97,18 +108,20 @@ function SectionLabel({ label }: { label: string }) {
 }
 
 /* ── Case study thumbnail card (grid) ── */
-function CaseStudyCard({ study, hovered, onEnter, onLeave }: {
+function CaseStudyCard({ study, hovered, onEnter, onLeave, onClick }: {
   study: CaseStudy;
   hovered: boolean;
   onEnter: () => void;
   onLeave: () => void;
+  onClick: () => void;
 }) {
   return (
     <div
       onMouseEnter={onEnter}
       onMouseLeave={onLeave}
+      onClick={onClick}
       style={{
-        width: 140,
+        width: 168,
         borderRadius: 10,
         overflow: "hidden",
         background: hovered ? "var(--desktop-icon-hover-bg)" : "transparent",
@@ -117,13 +130,13 @@ function CaseStudyCard({ study, hovered, onEnter, onLeave }: {
         transition: "background 0.15s ease",
       }}
     >
-      {/* Thumbnail */}
+      {/* Cover image */}
       <div style={{
-        width: "100%", height: 96,
+        width: "100%", height: 100,
         borderRadius: 7, overflow: "hidden",
         position: "relative",
         border: "1px solid var(--window-border)",
-        boxShadow: "0 2px 8px rgba(0,0,0,0.12)",
+        boxShadow: "0 2px 8px rgba(0,0,0,0.14)",
       }}>
         {/* eslint-disable-next-line @next/next/no-img-element */}
         <img
@@ -131,46 +144,54 @@ function CaseStudyCard({ study, hovered, onEnter, onLeave }: {
           alt={study.label}
           style={{ width: "100%", height: "100%", objectFit: "cover", objectPosition: "top center", display: "block" }}
         />
-        {/* Overlay with tag */}
         <div style={{
           position: "absolute", inset: 0,
-          background: "linear-gradient(to top, rgba(0,0,0,0.55) 0%, transparent 50%)",
+          background: "linear-gradient(to top, rgba(0,0,0,0.62) 0%, transparent 55%)",
           pointerEvents: "none",
         }} />
-        <div style={{
-          position: "absolute", bottom: 5, left: 6,
-          fontFamily: "monospace", fontSize: 7,
-          color: "rgba(255,255,255,0.75)", letterSpacing: "0.10em",
-          textTransform: "uppercase",
-        }}>
-          {study.tag}
+        {/* Accent dot + tag */}
+        <div style={{ position: "absolute", bottom: 6, left: 7, display: "flex", alignItems: "center", gap: 4 }}>
+          <div style={{ width: 5, height: 5, borderRadius: "50%", background: study.accent, flexShrink: 0 }} />
+          <span style={{
+            fontFamily: "monospace", fontSize: 7,
+            color: "rgba(255,255,255,0.80)", letterSpacing: "0.10em", textTransform: "uppercase",
+          }}>
+            {study.tag}
+          </span>
         </div>
       </div>
 
-      {/* Label row */}
-      <div style={{ marginTop: 6, paddingLeft: 2 }}>
-        <p className="font-sans text-[11px] font-medium" style={{ color: "var(--text-primary)" }}>
+      {/* Info */}
+      <div style={{ marginTop: 7, paddingLeft: 2 }}>
+        <p className="font-sans text-[12px] font-semibold leading-tight" style={{ color: "var(--text-primary)", marginBottom: 2 }}>
           {study.label}
         </p>
-        <p className="font-mono text-[9px]" style={{ color: "var(--text-tertiary)", marginTop: 1 }}>
-          {study.year}
+        <p className="font-mono text-[9px]" style={{ color: "var(--text-tertiary)" }}>
+          {study.role} · {study.year}
         </p>
+        {study.metric && (
+          <p className="font-mono text-[9px] font-semibold" style={{ color: study.accent, marginTop: 4 }}>
+            {study.metric}
+          </p>
+        )}
       </div>
     </div>
   );
 }
 
 /* ── Case study list row ── */
-function CaseStudyRow({ study, hovered, onEnter, onLeave }: {
+function CaseStudyRow({ study, hovered, onEnter, onLeave, onClick }: {
   study: CaseStudy;
   hovered: boolean;
   onEnter: () => void;
   onLeave: () => void;
+  onClick: () => void;
 }) {
   return (
     <div
       onMouseEnter={onEnter}
       onMouseLeave={onLeave}
+      onClick={onClick}
       style={{
         display: "flex", alignItems: "center", gap: 12,
         padding: "8px 12px", borderRadius: 12,
@@ -190,12 +211,17 @@ function CaseStudyRow({ study, hovered, onEnter, onLeave }: {
 
       {/* Info */}
       <div style={{ flex: 1, minWidth: 0 }}>
-        <p className="font-sans text-[12px] font-medium" style={{ color: "var(--text-primary)" }}>
+        <p className="font-sans text-[12px] font-semibold" style={{ color: "var(--text-primary)" }}>
           {study.label}
         </p>
         <p className="font-mono text-[9px]" style={{ color: "var(--text-tertiary)", marginTop: 1, letterSpacing: "0.06em" }}>
-          {study.tag} · {study.year}
+          {study.role} · {study.year}
         </p>
+        {study.metric && (
+          <p className="font-mono text-[9px]" style={{ color: study.accent, marginTop: 2 }}>
+            {study.metric}
+          </p>
+        )}
       </div>
 
       <ChevronRight size={12} strokeWidth={2} style={{ color: "var(--text-tertiary)", flexShrink: 0 }} />
@@ -287,6 +313,7 @@ export default function WorkWindow({ onOpenApp }: WorkWindowProps) {
               hovered={hovered === study.id}
               onEnter={() => setHovered(study.id)}
               onLeave={() => setHovered(null)}
+              onClick={() => open(`casestudy-${study.id}`)}
             />
           ))}
         </div>
@@ -301,6 +328,7 @@ export default function WorkWindow({ onOpenApp }: WorkWindowProps) {
               hovered={hovered === study.id}
               onEnter={() => setHovered(study.id)}
               onLeave={() => setHovered(null)}
+              onClick={() => open(`casestudy-${study.id}`)}
             />
           ))}
         </div>

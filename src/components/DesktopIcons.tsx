@@ -14,7 +14,7 @@ export interface DesktopItem {
 export const DESKTOP_ITEMS: DesktopItem[] = [
   { id: "resume",  icon: FileText, label: "Resume.pdf"  },
   { id: "contact", icon: Mail,     label: "Contact"     },
-  { id: "gimp",    icon: null,     label: "GIMP 2.10",  desktopOnly: true },
+  { id: "gimp",    icon: null,     label: "GIMP 2.10" },
 ];
 
 // Starting column positions (x from desktop left, y from desktop top)

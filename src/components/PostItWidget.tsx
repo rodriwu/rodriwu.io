@@ -1,7 +1,7 @@
 "use client";
 
 import { useMotionValue, motion } from "framer-motion";
-import { useState, useEffect, useRef } from "react";
+import { useState, useEffect, useRef, useCallback } from "react";
 
 interface PostItWidgetProps {
   isDark: boolean;
@@ -16,13 +16,33 @@ interface PostItWidgetProps {
 
 const W = 210;
 const H = 192;
-const TASKBAR_W = 56;
-const PAD = 20;
+const LONG_PRESS_MS = 400;
 
 export default function PostItWidget({ isDark, initX, initY, canvasW, canvasH, widgetId, onRegister, onDragMove }: PostItWidgetProps) {
   const x = useMotionValue(initX);
   const y = useMotionValue(initY);
   const [hovered, setHovered] = useState(false);
+
+  const isMobile = canvasW < 1024;
+
+  // ── Long-press wiggle (mobile only, visual feedback) ──
+  const longPressTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
+  const [wiggle, setWiggle] = useState(false);
+
+  const clearLongPress = useCallback(() => {
+    if (longPressTimer.current) { clearTimeout(longPressTimer.current); longPressTimer.current = null; }
+  }, []);
+
+  const handlePointerDown = useCallback(() => {
+    if (!isMobile) return;
+    clearLongPress();
+    longPressTimer.current = setTimeout(() => setWiggle(true), LONG_PRESS_MS);
+  }, [isMobile, clearLongPress]);
+
+  const handlePointerUp = useCallback(() => {
+    clearLongPress();
+    if (isMobile) setWiggle(false);
+  }, [isMobile, clearLongPress]);
 
   const whRef = useRef({ w: W, h: H });
 
@@ -37,17 +57,6 @@ export default function PostItWidget({ isDark, initX, initY, canvasW, canvasH, w
   // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [widgetId]);
 
-  const inset = canvasW >= 1024 ? 10 : 0;
-  const areaW = canvasW - inset * 2;
-  const areaH = canvasH - inset * 2;
-
-  const bounds = {
-    left:   TASKBAR_W + PAD,
-    right:  Math.max(TASKBAR_W + PAD, areaW - W - PAD),
-    top:    PAD,
-    bottom: areaH - H - PAD,
-  };
-
   // Post-it yellow in light, soft lavender (#CBC3E3) in dark
   const noteBg   = isDark ? "#CBC3E3" : "#fef08a";
   const noteTop  = isDark ? "#B8AED6" : "#fde047";
@@ -61,14 +70,26 @@ export default function PostItWidget({ isDark, initX, initY, canvasW, canvasH, w
 
   return (
     <motion.div
-      drag dragMomentum={false} dragElastic={0} dragConstraints={bounds}
-      onDrag={widgetId && onDragMove ? () => onDragMove(widgetId) : undefined}
+      drag={isMobile ? false : true}
+      dragMomentum={false} dragElastic={0}
+      onDrag={!isMobile && widgetId && onDragMove ? () => onDragMove(widgetId) : undefined}
+      onPointerDown={handlePointerDown}
+      onPointerUp={handlePointerUp}
+      onPointerCancel={handlePointerUp}
       onMouseEnter={() => setHovered(true)}
       onMouseLeave={() => setHovered(false)}
-      style={{ x, y, position: "absolute", top: 0, left: 0, pointerEvents: "auto", zIndex: 28, width: W, height: H, cursor: "grab" }}
+      style={{
+        ...(isMobile ? {} : { x, y }),
+        position: isMobile ? "relative" : "absolute",
+        top: 0, left: 0, pointerEvents: "auto", zIndex: 28,
+        width: W, height: H,
+        cursor: isMobile ? "default" : "grab",
+        touchAction: isMobile ? "pan-y" : "none",
+        flexShrink: 0,
+      }}
       initial={{ opacity: 0, scale: 0.92, rotate: -2.5 }}
-      animate={{ opacity: 1, scale: 1, rotate: -2.5 }}
-      transition={{ duration: 0.45, ease: [0.16, 1, 0.3, 1] }}
+      animate={{ opacity: 1, scale: wiggle ? 1.03 : 1, rotate: wiggle ? [-3, -2] : -2.5 }}
+      transition={wiggle ? { rotate: { repeat: Infinity, repeatType: "reverse", duration: 0.15 }, scale: { duration: 0.15 } } : { duration: 0.45, ease: [0.16, 1, 0.3, 1] }}
     >
       <motion.div
         animate={{ scale: hovered ? 1.02 : 1, rotate: hovered ? -1 : 0 }}

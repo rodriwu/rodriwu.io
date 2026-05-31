@@ -26,8 +26,8 @@ interface OsWindowProps {
 
 const MIN_W = 280;
 const MIN_H = 180;
-const EDGE = 5;    // px — edge hit-zone thickness
-const CORNER = 14; // px — corner hit-zone size
+const EDGE = 5;
+const CORNER = 14;
 
 type ResizeDir = "n" | "s" | "e" | "w" | "ne" | "nw" | "se" | "sw";
 
@@ -61,36 +61,36 @@ export default function OsWindow({
   onMaximize,
 }: OsWindowProps) {
   const isMobile = canvasW < 1024;
-  const TASKBAR_W = 56;
+  const TASKBAR_W = isMobile ? 0 : 56;
+  const BOTTOM_BAR = isMobile ? 60 : 0;
   const inset = isMobile ? 0 : 10;
   const CONTENT_W = (canvasW - inset * 2) - TASKBAR_W;
   const CONTENT_H = canvasH - inset * 2;
   const MAX_W = isMobile
-    ? Math.round(CONTENT_W * 0.95)
+    ? canvasW
     : Math.min(Math.round(CONTENT_W * maxSizeFraction), maxPixelW ?? Infinity);
-  const MAX_H = Math.min(Math.round(CONTENT_H * maxSizeFraction), maxPixelH ?? Infinity);
+  const MAX_H = isMobile
+    ? canvasH
+    : Math.min(Math.round(CONTENT_H * maxSizeFraction), maxPixelH ?? Infinity);
   const MAX_X = isMobile
-    ? TASKBAR_W + Math.round((CONTENT_W - MAX_W) / 2)
+    ? 0
     : (snapLeft ? TASKBAR_W + 8 : TASKBAR_W + Math.round((CONTENT_W - MAX_W) / 2));
-  const MAX_Y = Math.round((CONTENT_H - MAX_H) / 2);
+  const MAX_Y = isMobile ? 0 : Math.round((CONTENT_H - MAX_H) / 2);
 
   const [isMaximized, setIsMaximized] = useState(openMaximized || isMobile);
   const [titlebarHovered, setTitlebarHovered] = useState(false);
-  const [buttonsHovered, setButtonsHovered] = useState(false);
   const [size, setSize] = useState({ w: defaultSize.w, h: defaultSize.h });
   const [isResizing, setIsResizing] = useState(false);
 
   const dragControls = useDragControls();
   const constraintsRef = useRef<HTMLDivElement>(null);
-  // When opening maximized, place at the expanded position immediately
-  const initX = openMaximized ? MAX_X : defaultPosition.x;
-  const initY = openMaximized ? 30 : defaultPosition.y;
+  const initX = isMobile ? 0 : (openMaximized ? MAX_X : defaultPosition.x);
+  const initY = isMobile ? 0 : (openMaximized ? 30 : defaultPosition.y);
   const x = useMotionValue(initX);
   const y = useMotionValue(initY);
   const savedPos = useRef({ x: defaultPosition.x, y: defaultPosition.y });
   const hasMounted = useRef(false);
 
-  // Notify parent of initial maximized state
   useEffect(() => {
     if (openMaximized) onMaximize?.(true);
   // eslint-disable-next-line react-hooks/exhaustive-deps
@@ -103,7 +103,6 @@ export default function OsWindow({
       animate(x, MAX_X, { type: "spring", stiffness: 380, damping: 32 });
       animate(y, MAX_Y, { type: "spring", stiffness: 380, damping: 32 });
     } else if (isMobile) {
-      // Mobile restore: half height, full width, stays at top
       setSize({ w: MAX_W, h: Math.round(MAX_H * 0.5) });
       animate(x, MAX_X, { type: "spring", stiffness: 380, damping: 32 });
       animate(y, MAX_Y, { type: "spring", stiffness: 380, damping: 32 });
@@ -141,12 +140,8 @@ export default function OsWindow({
       const RIGHT_EDGE  = TASKBAR_W + CONTENT_W;
       const BOTTOM_EDGE = CONTENT_H;
 
-      if (dir.includes("e")) {
-        newW = Math.min(MAX_W, RIGHT_EDGE - startX, Math.max(MIN_W, startW + dx));
-      }
-      if (dir.includes("s")) {
-        newH = Math.min(MAX_H, BOTTOM_EDGE - startY, Math.max(MIN_H, startH + dy));
-      }
+      if (dir.includes("e")) newW = Math.min(MAX_W, RIGHT_EDGE - startX, Math.max(MIN_W, startW + dx));
+      if (dir.includes("s")) newH = Math.min(MAX_H, BOTTOM_EDGE - startY, Math.max(MIN_H, startH + dy));
       if (dir.includes("w")) {
         newW = Math.min(MAX_W, startW + (startX - TASKBAR_W), Math.max(MIN_W, startW - dx));
         newX = startX + startW - newW;
@@ -179,29 +174,51 @@ export default function OsWindow({
       <div ref={constraintsRef} className="absolute inset-0 pointer-events-none" />
 
       <motion.div
-        drag={!isResizing}
-        dragControls={dragControls}
-        dragListener={false}
-        dragConstraints={constraintsRef}
-        dragElastic={0}
+        drag={isMobile ? "y" : !isResizing}
+        dragControls={isMobile ? undefined : dragControls}
+        dragListener={isMobile ? true : false}
+        dragConstraints={isMobile ? { top: 0, bottom: canvasH } : constraintsRef}
+        dragElastic={isMobile ? { top: 0, bottom: 0.15 } : 0}
         dragMomentum={false}
-        initial={{ opacity: 0, scale: 0.96 }}
-        animate={isMinimized ? { scale: 0.08, opacity: 0 } : { scale: 1, opacity: 1 }}
-        exit={{ opacity: 0, scale: 0.93, transition: { duration: 0.18 } }}
-        transition={{ type: "spring", stiffness: 380, damping: 32 }}
+        onDragEnd={isMobile ? (_, info) => {
+          if (info.offset.y > 120) {
+            onClose();
+          } else {
+            animate(y, 0, { type: "spring", stiffness: 400, damping: 30 });
+          }
+        } : undefined}
+        initial={isMobile
+          ? { y: canvasH, opacity: 1 }
+          : { opacity: 0, scale: 0.96 }
+        }
+        animate={isMinimized
+          ? { scale: 0.08, opacity: 0 }
+          : isMobile
+            ? { y: 0, opacity: 1 }
+            : { scale: 1, opacity: 1 }
+        }
+        exit={isMobile
+          ? { y: canvasH, opacity: 1, transition: { duration: 0.3, ease: [0.4, 0, 1, 1] } }
+          : { opacity: 0, scale: 0.93, transition: { duration: 0.18 } }
+        }
+        transition={isMobile
+          ? { type: "spring", damping: 30, stiffness: 320 }
+          : { type: "spring", stiffness: 380, damping: 32 }
+        }
         role="dialog"
         aria-label={title}
         aria-modal="true"
         style={{
-          x, y,
+          x: isMobile ? 0 : x,
+          y: isMobile ? y : y,
           pointerEvents: "auto",
           touchAction: "none",
-          width: isMaximized ? MAX_W : size.w,
-          height: autoHeight ? "auto" : (isMaximized ? MAX_H : size.h),
+          width: isMobile ? canvasW : (isMaximized ? MAX_W : size.w),
+          height: isMobile ? canvasH : (autoHeight ? "auto" : (isMaximized ? MAX_H : size.h)),
           maxHeight: autoHeight ? MAX_H : undefined,
           transition: isResizing ? "none" : "width 0.35s ease, height 0.35s ease",
           position: "absolute",
-          borderRadius: 16,
+          borderRadius: isMobile ? "20px 20px 0 0" : 16,
           overflow: "hidden",
           display: "flex",
           flexDirection: "column",
@@ -209,10 +226,13 @@ export default function OsWindow({
           backdropFilter: "blur(40px) saturate(160%)",
           WebkitBackdropFilter: "blur(40px) saturate(160%)",
           border: "1px solid var(--window-border)",
-          boxShadow: "var(--window-shadow)",
+          borderBottom: isMobile ? "none" : "1px solid var(--window-border)",
+          boxShadow: isMobile
+            ? "0 -8px 40px rgba(0,0,0,0.25), inset 0 1px 0 var(--glass-highlight)"
+            : "var(--window-shadow)",
         }}
       >
-        {/* Resize handles — all 8 directions */}
+        {/* Resize handles — desktop only */}
         {!isMaximized && !isMobile && RESIZE_HANDLES.map(({ dir, style }) => (
           <div
             key={dir}
@@ -221,7 +241,7 @@ export default function OsWindow({
           />
         ))}
 
-        {/* Top accent edge — thin violet→cyan gradient line */}
+        {/* Top accent edge */}
         <div style={{
           position: "absolute",
           top: 0, left: 0, right: 0,
@@ -231,9 +251,20 @@ export default function OsWindow({
           pointerEvents: "none",
         }} />
 
+        {/* Mobile drag handle pill */}
+        {isMobile && (
+          <div style={{
+            display: "flex", justifyContent: "center",
+            paddingTop: 8, paddingBottom: 0,
+            background: "var(--window-title-bg)",
+          }}>
+            <div style={{ width: 36, height: 5, borderRadius: 3, background: "var(--text-tertiary)", opacity: 0.35 }} />
+          </div>
+        )}
+
         {/* Title bar */}
         <div
-          onPointerDown={(e) => dragControls.start(e)}
+          onPointerDown={isMobile ? undefined : (e) => dragControls.start(e)}
           onMouseEnter={() => setTitlebarHovered(true)}
           onMouseLeave={() => setTitlebarHovered(false)}
           style={{
@@ -241,8 +272,8 @@ export default function OsWindow({
             alignItems: "center",
             justifyContent: "space-between",
             paddingInline: 14,
-            paddingTop: isMobile ? 14 : 10,
-            paddingBottom: isMobile ? 14 : 10,
+            paddingTop: isMobile ? 8 : 10,
+            paddingBottom: isMobile ? 10 : 10,
             cursor: isMobile ? "default" : "grab",
             userSelect: "none",
             flexShrink: 0,
@@ -252,75 +283,58 @@ export default function OsWindow({
           }}
         >
           {/* Window control dots */}
-          <div
-            style={{
-              display: "flex", alignItems: "center", gap: 7,
-              filter: isMobile ? "none" : (buttonsHovered ? "saturate(1)" : "saturate(0.38) opacity(0.52)"),
-              transition: "filter 0.22s ease",
-            }}
-            onMouseEnter={() => setButtonsHovered(true)}
-            onMouseLeave={() => setButtonsHovered(false)}
-          >
-            {/* Close */}
+          <div style={{ display: "flex", alignItems: "center", gap: 7 }}>
             <button
               onClick={onClose}
               aria-label={`Close ${title}`}
               style={{
-                width: btnSize, height: btnSize,
-                borderRadius: "50%",
-                background: "rgba(255,59,48,0.72)",
-                border: "none",
+                width: btnSize, height: btnSize, borderRadius: "50%",
+                background: "linear-gradient(180deg, rgba(255,255,255,0.3) 0%, rgba(180,140,255,0.85) 100%)",
+                boxShadow: "inset 0 1px 1px rgba(255,255,255,0.45), inset 0 -1px 1px rgba(0,0,0,0.15), 0 1px 2px rgba(0,0,0,0.2)",
+                border: "0.5px solid rgba(0,0,0,0.1)",
                 display: "flex", alignItems: "center", justifyContent: "center",
-                flexShrink: 0,
-                cursor: "pointer",
+                flexShrink: 0, cursor: "pointer",
               }}
               className="group"
             >
-              <X size={iconSize} className={isMobile ? "opacity-100" : "opacity-0 group-hover:opacity-100 transition-opacity"} strokeWidth={2.5} style={{ color: "rgba(140,20,10,0.9)" }} aria-hidden="true" />
+              <X size={iconSize} className={isMobile ? "opacity-100" : "opacity-0 group-hover:opacity-100 transition-opacity"} strokeWidth={3} style={{ color: "rgba(60,20,120,0.9)" }} aria-hidden="true" />
             </button>
 
-            {/* Maximize — desktop only */}
             {!isMobile && (
               <button
                 onClick={() => setIsMaximized((m) => !m)}
                 aria-label={isMaximized ? `Restore ${title}` : `Maximize ${title}`}
                 style={{
-                  width: btnSize, height: btnSize,
-                  borderRadius: "50%",
-                  background: "rgba(40,205,65,0.72)",
-                  border: "none",
+                  width: btnSize, height: btnSize, borderRadius: "50%",
+                  background: "linear-gradient(180deg, rgba(255,255,255,0.3) 0%, rgba(40,180,220,0.85) 100%)",
+                  boxShadow: "inset 0 1px 1px rgba(255,255,255,0.45), inset 0 -1px 1px rgba(0,0,0,0.15), 0 1px 2px rgba(0,0,0,0.2)",
+                  border: "0.5px solid rgba(0,0,0,0.1)",
                   display: "flex", alignItems: "center", justifyContent: "center",
-                  flexShrink: 0,
-                  cursor: "pointer",
+                  flexShrink: 0, cursor: "pointer",
                 }}
                 className="group"
               >
-                <Maximize2 size={iconSize} className="opacity-0 group-hover:opacity-100 transition-opacity" strokeWidth={2.5} style={{ color: "rgba(0,80,20,0.9)" }} aria-hidden="true" />
+                <Maximize2 size={iconSize} className="opacity-0 group-hover:opacity-100 transition-opacity" strokeWidth={3} style={{ color: "rgba(0,80,100,0.9)" }} aria-hidden="true" />
               </button>
             )}
           </div>
 
-          {/* Title — centered */}
+          {/* Title */}
           <span
             className="font-mono absolute left-1/2 -translate-x-1/2"
             style={{
-              fontSize: 10,
-              letterSpacing: "0.08em",
+              fontSize: 10, letterSpacing: "0.08em",
               color: "var(--text-tertiary)",
-              pointerEvents: "none",
-              whiteSpace: "nowrap",
+              pointerEvents: "none", whiteSpace: "nowrap",
             }}
           >
             {title}
           </span>
 
-          {/* Right decorative dots */}
+          {/* Right dots */}
           <div style={{ display: "flex", alignItems: "center", gap: 4, opacity: titlebarHovered ? 0.4 : 0.18, transition: "opacity 0.2s ease" }}>
             {[0, 1, 2].map((i) => (
-              <div key={i} style={{
-                width: 3, height: 3, borderRadius: "50%",
-                background: "var(--text-tertiary)",
-              }} />
+              <div key={i} style={{ width: 3, height: 3, borderRadius: "50%", background: "var(--text-tertiary)" }} />
             ))}
           </div>
         </div>
@@ -328,7 +342,11 @@ export default function OsWindow({
         {/* Content */}
         <div
           className={autoHeight ? "" : "flex-1 overflow-auto"}
-          style={{ color: "var(--text-primary)", ...(autoHeight ? { overflowY: "auto", maxHeight: "inherit" } : {}) }}
+          style={{
+            color: "var(--text-primary)",
+            ...(autoHeight ? { overflowY: "auto", maxHeight: "inherit" } : {}),
+            ...(isMobile ? { paddingBottom: 60 } : {}),
+          }}
         >
           {children}
         </div>

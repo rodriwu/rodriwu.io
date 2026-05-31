@@ -1,6 +1,6 @@
 "use client";
 
-import { useMotionValue, motion } from "framer-motion";
+import { motion, AnimatePresence } from "framer-motion";
 import { Play, Pause, Volume2, VolumeX, Volume1, SkipBack, SkipForward } from "lucide-react";
 import { useRef, useState, useCallback, useEffect } from "react";
 
@@ -15,8 +15,6 @@ interface MusicWidgetProps {
   onToggleMute: () => void;
   onSeek: (time: number) => void;
   onVolumeChange: (v: number) => void;
-  initX: number;
-  initY: number;
   canvasW: number;
   canvasH: number;
 }
@@ -28,8 +26,6 @@ function fmt(s: number) {
 }
 
 const WIDGET_W  = 260;
-const WIDGET_H  = 148;
-const TASKBAR_W = 56;
 const PAD       = 20;
 
 /* ── Waveform canvas ── */
@@ -167,23 +163,9 @@ export default function MusicWidget({
   isPlaying, isMuted, isDark,
   currentTime, duration, volume,
   onTogglePlay, onToggleMute, onSeek, onVolumeChange,
-  initX, initY, canvasW, canvasH,
+  canvasW, canvasH,
 }: MusicWidgetProps) {
-  const isMobile = canvasW < 1024;
-
-  const x = useMotionValue(initX);
-  const y = useMotionValue(initY);
-
-  const inset = isMobile ? 0 : 10;
-  const areaW = canvasW - inset * 2;
-  const areaH = canvasH - inset * 2;
-
-  const bounds = {
-    left:   TASKBAR_W + PAD,
-    right:  areaW - WIDGET_W - PAD,
-    top:    PAD,
-    bottom: areaH - WIDGET_H - PAD,
-  };
+  const [isExpanded, setIsExpanded] = useState(false);
 
   const active      = isPlaying && !isMuted;
   const hasDuration = duration > 0 && isFinite(duration);
@@ -194,6 +176,11 @@ export default function MusicWidget({
   const displayTime     = scrubbing ? scrubFrac * duration : currentTime;
 
   const VolIcon = isMuted ? VolumeX : volume < 0.4 ? Volume1 : Volume2;
+
+  // Keep expanded while scrubbing
+  const handleMouseLeave = () => {
+    if (!scrubbing) setIsExpanded(false);
+  };
 
   // OS-adaptive neutral liquid glass tokens
   const bg       = isDark ? "rgba(12,12,18,0.58)"                   : "rgba(252,251,248,0.52)";
@@ -219,18 +206,22 @@ export default function MusicWidget({
 
   return (
     <motion.div
-      drag dragMomentum={false} dragElastic={0} dragConstraints={bounds}
+      onMouseEnter={() => setIsExpanded(true)}
+      onMouseLeave={handleMouseLeave}
       style={{
-        x, y, position: "absolute", top: 0, left: 0,
-        pointerEvents: "auto", zIndex: 20,
+        position: "absolute",
+        bottom: canvasW < 1024 ? 76 : PAD,
+        right: PAD,
+        pointerEvents: "auto",
+        zIndex: 20,
         width: WIDGET_W,
-        cursor: scrubbing ? "grabbing" : "grab",
       }}
-      initial={{ opacity: 0, scale: 0.92 }}
-      animate={{ opacity: 1, scale: 1 }}
-      exit={{ opacity: 0, scale: 0.9, transition: { duration: 0.15 } }}
-      transition={{ duration: 0.28, ease: [0.16, 1, 0.3, 1] }}
+      initial={{ opacity: 0, y: 12 }}
+      animate={{ opacity: 1, y: 0 }}
+      exit={{ opacity: 0, y: 8, transition: { duration: 0.15 } }}
+      transition={{ duration: 0.35, ease: [0.16, 1, 0.3, 1] }}
     >
+      {/* Breathing glow */}
       <motion.div
         animate={{ opacity: active ? [0.15, 0.30, 0.15] : 0.06 }}
         transition={{ duration: 2.8, repeat: Infinity, ease: "easeInOut" }}
@@ -244,6 +235,7 @@ export default function MusicWidget({
         backdropFilter: "blur(52px) saturate(180%)",
         WebkitBackdropFilter: "blur(52px) saturate(180%)",
       }}>
+        {/* Scanlines */}
         <div style={{
           position: "absolute", inset: 0, pointerEvents: "none", zIndex: 10, borderRadius: 20,
           backgroundImage: isDark
@@ -253,7 +245,7 @@ export default function MusicWidget({
 
         <div style={{ padding: "10px 12px 11px" }}>
 
-          {/* Waveform */}
+          {/* Waveform — always visible */}
           <div style={{ position: "relative", borderRadius: 8, overflow: "hidden", marginBottom: 9, background: waveBg, border: `1px solid ${waveB}` }}>
             <div style={{ position: "absolute", top: 4, left: 6, zIndex: 2, pointerEvents: "none", display: "flex", alignItems: "center", gap: 4 }}>
               <motion.div animate={{ opacity: active ? [1, 0.3, 1] : 0.3 }} transition={{ duration: 1.1, repeat: Infinity }}
@@ -268,51 +260,98 @@ export default function MusicWidget({
             <WaveformCanvas active={active} isDark={isDark} />
           </div>
 
-          {/* Track info + controls */}
-          <div className="flex items-center gap-2">
-            <div style={{ flex: 1, minWidth: 0 }}>
-              <div style={{ fontFamily: "monospace", fontSize: 10, fontWeight: 600, color: textHi, letterSpacing: "0.04em", lineHeight: 1.3, overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>
-                Jazz·Beats — lo·fi
-              </div>
-              <div style={{ fontFamily: "monospace", fontSize: 8, color: textMed, letterSpacing: "0.06em", lineHeight: 1.4 }}>
-                ambient mix
-              </div>
-            </div>
-            <div style={{ display: "flex", alignItems: "center", gap: 1, flexShrink: 0 }}>
-              {controls.map(({ icon: Icon, size, title, onClick, main }, i) => (
-                <motion.button key={i} whileHover={{ scale: 1.15 }} whileTap={{ scale: 0.9 }}
-                  onClick={(e) => { e.stopPropagation(); onClick(); }} title={title}
-                  style={{ width: main ? 26 : 22, height: main ? 26 : 22, borderRadius: main ? 8 : 6, border: main ? `1px solid ${btnB}` : "none", background: main ? btnBg : "transparent", display: "flex", alignItems: "center", justifyContent: "center", cursor: "pointer", color: main ? btnClr : iconClr, flexShrink: 0 }}>
-                  <Icon size={size} strokeWidth={2.2} />
+          {/* ── Collapsed: just song name ── */}
+          <AnimatePresence mode="wait">
+            {!isExpanded ? (
+              <motion.div
+                key="collapsed"
+                initial={{ opacity: 0 }}
+                animate={{ opacity: 1 }}
+                exit={{ opacity: 0 }}
+                transition={{ duration: 0.15 }}
+                className="flex items-center gap-2"
+              >
+                <div style={{ flex: 1, minWidth: 0 }}>
+                  <div style={{ fontFamily: "monospace", fontSize: 10, fontWeight: 600, color: textHi, letterSpacing: "0.04em", lineHeight: 1.3, overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>
+                    Jazz·Beats — lo·fi
+                  </div>
+                  <div style={{ fontFamily: "monospace", fontSize: 8, color: textMed, letterSpacing: "0.06em", lineHeight: 1.4 }}>
+                    ambient mix
+                  </div>
+                </div>
+                {/* Minimal play/pause pill */}
+                <motion.button
+                  whileHover={{ scale: 1.1 }}
+                  whileTap={{ scale: 0.9 }}
+                  onClick={(e) => { e.stopPropagation(); onTogglePlay(); }}
+                  style={{
+                    width: 26, height: 26, borderRadius: 8,
+                    border: `1px solid ${btnB}`, background: btnBg,
+                    display: "flex", alignItems: "center", justifyContent: "center",
+                    cursor: "pointer", color: btnClr, flexShrink: 0,
+                  }}
+                >
+                  {isPlaying ? <Pause size={10} strokeWidth={2.2} /> : <Play size={10} strokeWidth={2.2} />}
                 </motion.button>
-              ))}
-            </div>
-          </div>
+              </motion.div>
+            ) : (
+              /* ── Expanded: original full layout ── */
+              <motion.div
+                key="expanded"
+                initial={{ opacity: 0 }}
+                animate={{ opacity: 1 }}
+                exit={{ opacity: 0 }}
+                transition={{ duration: 0.18 }}
+              >
+                {/* Track info + controls row */}
+                <div className="flex items-center gap-2">
+                  <div style={{ flex: 1, minWidth: 0 }}>
+                    <div style={{ fontFamily: "monospace", fontSize: 10, fontWeight: 600, color: textHi, letterSpacing: "0.04em", lineHeight: 1.3, overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>
+                      Jazz·Beats — lo·fi
+                    </div>
+                    <div style={{ fontFamily: "monospace", fontSize: 8, color: textMed, letterSpacing: "0.06em", lineHeight: 1.4 }}>
+                      ambient mix
+                    </div>
+                  </div>
+                  <div style={{ display: "flex", alignItems: "center", gap: 1, flexShrink: 0 }}>
+                    {controls.map(({ icon: Icon, size, title, onClick, main }, i) => (
+                      <motion.button key={i} whileHover={{ scale: 1.15 }} whileTap={{ scale: 0.9 }}
+                        onClick={(e) => { e.stopPropagation(); onClick(); }} title={title}
+                        style={{ width: main ? 26 : 22, height: main ? 26 : 22, borderRadius: main ? 8 : 6, border: main ? `1px solid ${btnB}` : "none", background: main ? btnBg : "transparent", display: "flex", alignItems: "center", justifyContent: "center", cursor: "pointer", color: main ? btnClr : iconClr, flexShrink: 0 }}>
+                        <Icon size={size} strokeWidth={2.2} />
+                      </motion.button>
+                    ))}
+                  </div>
+                </div>
 
-          {/* Progress */}
-          <div style={{ marginTop: 8 }}>
-            <Scrubber value={displayProgress} isDark={isDark}
-              onChange={(f) => { setScrubbing(true); setScrubFrac(f); }}
-              onCommit={(f) => { onSeek(f * duration); setScrubbing(false); }} />
-            <div style={{ display: "flex", justifyContent: "space-between", fontFamily: "monospace", fontSize: 8, color: textLow, letterSpacing: "0.06em", marginTop: 2 }}>
-              <span>{fmt(displayTime)}</span>
-              {hasDuration && <span>{fmt(duration)}</span>}
-            </div>
-          </div>
+                {/* Progress */}
+                <div style={{ marginTop: 8 }}>
+                  <Scrubber value={displayProgress} isDark={isDark}
+                    onChange={(f) => { setScrubbing(true); setScrubFrac(f); }}
+                    onCommit={(f) => { onSeek(f * duration); setScrubbing(false); }} />
+                  <div style={{ display: "flex", justifyContent: "space-between", fontFamily: "monospace", fontSize: 8, color: textLow, letterSpacing: "0.06em", marginTop: 2 }}>
+                    <span>{fmt(displayTime)}</span>
+                    {hasDuration && <span>{fmt(duration)}</span>}
+                  </div>
+                </div>
 
-          {/* Volume */}
-          <div style={{ marginTop: 6, display: "flex", alignItems: "center", gap: 6 }}>
-            <VolIcon size={9} strokeWidth={2} style={{ color: iconClr, flexShrink: 0 }} />
-            <div style={{ flex: 1 }}>
-              <Scrubber value={isMuted ? 0 : volume} isDark={isDark} onChange={onVolumeChange} />
-            </div>
-            <span style={{ fontFamily: "monospace", fontSize: 7, color: textLow, width: 22, textAlign: "right", flexShrink: 0 }}>
-              {isMuted ? "0%" : `${Math.round(volume * 100)}%`}
-            </span>
-          </div>
+                {/* Volume */}
+                <div style={{ marginTop: 6, display: "flex", alignItems: "center", gap: 6 }}>
+                  <VolIcon size={9} strokeWidth={2} style={{ color: iconClr, flexShrink: 0 }} />
+                  <div style={{ flex: 1 }}>
+                    <Scrubber value={isMuted ? 0 : volume} isDark={isDark} onChange={onVolumeChange} />
+                  </div>
+                  <span style={{ fontFamily: "monospace", fontSize: 7, color: textLow, width: 22, textAlign: "right", flexShrink: 0 }}>
+                    {isMuted ? "0%" : `${Math.round(volume * 100)}%`}
+                  </span>
+                </div>
+              </motion.div>
+            )}
+          </AnimatePresence>
 
         </div>
 
+        {/* Bottom pulse line */}
         <motion.div
           animate={{ scaleX: active ? [0.3, 1, 0.3] : 0.2 }}
           transition={{ duration: 3.2, repeat: Infinity, ease: "easeInOut" }}

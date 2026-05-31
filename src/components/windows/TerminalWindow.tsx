@@ -256,15 +256,35 @@ const T = {
     hint:        "Type 'help' for available commands.",
     help: [
       "Available commands:",
+      "",
+      "— Core —",
       "  whoami      — about Rodrigo",
       "  skills      — design & tech skills",
       "  links       — github & social media",
       "  contact     — contact information",
       "  work        — work philosophy",
       "  sysinfo     — system information",
-      "  ask         — leave me a question or message",
+      "  ask         — leave me a message",
       "  claude      — open Claude Code",
       "  clear       — clear terminal",
+      "",
+      "— File System —",
+      "  ls [dir]    — list directory contents",
+      "  cd <dir>    — change directory",
+      "  pwd         — print working directory",
+      "  cat <file>  — read file content",
+      "  touch <f>   — create empty file",
+      "  mkdir <d>   — create directory",
+      "  rm <name>   — delete file or directory",
+      "",
+      "— System & Toys —",
+      "  c/run <p>   — run binary programs",
+      "  joke        — random developer joke",
+      "  weather     — simulated weather",
+      "  sudo        — superuser do (try it!)",
+      "  echo <txt>  — repeat text",
+      "  date        — show system date",
+      "  uname       — system information",
     ],
     sysinfo: [
       "— System Information —",
@@ -333,15 +353,35 @@ const T = {
     hint:        "Escribe 'help' para ver los comandos disponibles.",
     help: [
       "Comandos disponibles:",
+      "",
+      "— Núcleo —",
       "  whoami      — sobre Rodrigo",
       "  skills      — habilidades",
       "  links       — redes y github",
       "  contact     — información de contacto",
       "  work        — filosofía de trabajo",
       "  sysinfo     — información del sistema",
-      "  ask         — déjame una pregunta o mensaje",
+      "  ask         — déjame un mensaje",
       "  claude      — abrir Claude Code",
       "  clear       — limpiar terminal",
+      "",
+      "— Sistema de Archivos —",
+      "  ls [dir]    — listar archivos",
+      "  cd <dir>    — cambiar directorio",
+      "  pwd         — ruta actual",
+      "  cat <arch>  — leer archivo",
+      "  touch <f>   — crear archivo vacío",
+      "  mkdir <d>   — crear directorio",
+      "  rm <nombre> — borrar archivo/carpeta",
+      "",
+      "— Sistema y Juguetes —",
+      "  c/run <p>   — ejecutar programas",
+      "  joke        — chiste aleatorio",
+      "  weather     — clima simulado",
+      "  sudo        — superusuario (¡pruébalo!)",
+      "  echo <txt>  — repetir texto",
+      "  date        — fecha del sistema",
+      "  uname       — info del sistema",
     ],
     sysinfo: [
       "— Información del Sistema —",
@@ -370,7 +410,7 @@ const T = {
       "Rodrigo Martínez (Rodriwu)",
       "Diseñador con más de 5 años de experiencia.",
       "Enfocado en diseño de interacción y UX.",
-      "Amigable, persistente y con mucha energía.",
+      "Amigable, persistentemente y con mucha energía.",
     ],
     skills: [
       "Diseño:     Figma, Sketch, Adobe XD",
@@ -407,6 +447,50 @@ const T = {
   },
 } as const;
 
+/* ── Simulated File System ── */
+type FileNode = {
+  type: "file";
+  content: string;
+};
+type DirectoryNode = {
+  type: "dir";
+  children: Record<string, FileNode | DirectoryNode>;
+};
+type FSNode = FileNode | DirectoryNode;
+
+const INITIAL_FS: DirectoryNode = {
+  type: "dir",
+  children: {
+    "about.txt": { type: "file", content: "Rodrigo Martínez (Rodriwu)\nDesigner & Developer\nFocused on interaction design & UX." },
+    "skills.md": { type: "file", content: "# Skills\n\n- Design: Figma, Sketch\n- Frontend: React, Next.js, Tailwind\n- Motion: Framer Motion, GSAP" },
+    "projects": {
+      type: "dir",
+      children: {
+        "portfolio.v1": { type: "file", content: "Legacy portfolio built with React." },
+        "portfolio.v2": { type: "file", content: "Modern portfolio built with Next.js 14." },
+        "secret_plans.txt": { type: "file", content: "1. Build cool stuff\n2. Have fun\n3. Repeat" },
+      }
+    },
+    "bin": {
+      type: "dir",
+      children: {
+        "hello": { type: "file", content: "echo 'Hello, World!'" },
+        "matrix": { type: "file", content: "run_matrix_animation()" },
+      }
+    },
+    "readme.md": { type: "file", content: "Welcome to my terminal! Feel free to explore.\nTry 'ls', 'cd', and 'cat'." },
+  }
+};
+
+const JOKES = [
+  "Why do programmers prefer dark mode? Because light attracts bugs.",
+  "How many programmers does it take to change a light bulb? None, that's a hardware problem.",
+  "A SQL query walks into a bar, walks up to two tables, and asks... 'Can I join you?'",
+  "Real programmers count from 0.",
+  "I'd tell you a joke about UDP, but you might not get it.",
+  "A programmer was found dead in the shower. The instructions on the shampoo said: Lather, Rinse, Repeat.",
+];
+
 export default function TerminalWindow({ locale = "en" }: { locale?: Locale }) {
   const t = T[locale];
   const initialLines: Line[] = [t.banner, t.hint, ""];
@@ -416,6 +500,10 @@ export default function TerminalWindow({ locale = "en" }: { locale?: Locale }) {
   const [histIdx, setHistIdx] = useState(-1);
   const [askStep, setAskStep] = useState<AskStep>(null);
   const [claudeMode, setClaudeMode] = useState(false);
+  const [fs, setFs] = useState<DirectoryNode>(INITIAL_FS);
+  const [cwd, setCwd] = useState<string[]>([]); // path segments
+  const [userName, setUserName] = useState<string | null>(null);
+  const [isMatrixing, setIsMatrixing] = useState(false);
   const bottomRef = useRef<HTMLDivElement>(null);
   const inputRef = useRef<HTMLInputElement>(null);
 
@@ -423,15 +511,55 @@ export default function TerminalWindow({ locale = "en" }: { locale?: Locale }) {
     bottomRef.current?.scrollIntoView({ behavior: "smooth" });
   }, [lines]);
 
+  useEffect(() => {
+    if (!isMatrixing) return;
+    const interval = setInterval(() => {
+      const line = Array.from({ length: 40 }, () => Math.random() > 0.5 ? "1" : "0").join("");
+      setLines(prev => [...prev.slice(-100), line]);
+    }, 80);
+    const timeout = setTimeout(() => {
+      setIsMatrixing(false);
+      setLines(prev => [...prev, "", "Matrix session terminated.", ""]);
+    }, 4000);
+    return () => {
+      clearInterval(interval);
+      clearTimeout(timeout);
+    };
+  }, [isMatrixing]);
+
   const prompt =
     claudeMode              ? ">"      :
-    askStep === null        ? "$"      :
+    askStep === null        ? (cwd.length === 0 ? "~ $" : `~/${cwd.join("/")} $`) :
     askStep.step === "name" ? "name >" :
     askStep.step === "email"? "email>" :
                               "msg  >";
 
+  // Get node at path relative to current dir
+  const getNode = (path: string, currentFS: DirectoryNode, currentCWD: string[]): FSNode | null => {
+    if (!path || path === ".") return currentFS;
+    
+    let segments = path.startsWith("/") ? path.split("/").filter(Boolean) : [...currentCWD, ...path.split("/").filter(Boolean)];
+    
+    // Resolve ".."
+    const resolved: string[] = [];
+    for (const seg of segments) {
+      if (seg === "..") resolved.pop();
+      else if (seg !== ".") resolved.push(seg);
+    }
+
+    let node: FSNode = INITIAL_FS;
+    for (const seg of resolved) {
+      if (node.type !== "dir" || !node.children[seg]) return null;
+      node = node.children[seg];
+    }
+    return node;
+  };
+
   const runCommand = (cmd: string) => {
     const trimmed = cmd.trim();
+    if (!trimmed && !claudeMode && !askStep) return;
+
+    if (isMatrixing) return;
 
     /* ── Claude mode — any input is an error ── */
     if (claudeMode) {
@@ -446,6 +574,7 @@ export default function TerminalWindow({ locale = "en" }: { locale?: Locale }) {
     if (askStep !== null) {
       if (askStep.step === "name") {
         const name = trimmed || "anonymous";
+        setUserName(name);
         setLines((prev) => [...prev, `name > ${cmd}`, "", t.askEmail]);
         setAskStep({ step: "email", name });
       } else if (askStep.step === "email") {
@@ -474,20 +603,22 @@ export default function TerminalWindow({ locale = "en" }: { locale?: Locale }) {
       return;
     }
 
-    const lower = trimmed.toLowerCase();
-    const newLines: Line[] = [...lines, `$ ${cmd}`];
+    const parts = trimmed.split(/\s+/);
+    const mainCmd = parts[0].toLowerCase();
+    const args = parts.slice(1);
+    const newLines: Line[] = [...lines, `${prompt} ${cmd}`];
 
-    if (lower === "clear") {
+    if (mainCmd === "clear") {
       setLines(initialLines);
-    } else if (lower === "claude") {
+    } else if (mainCmd === "claude") {
       setLines([...newLines, ...CLAUDE_BANNER]);
       setClaudeMode(true);
       setInput("");
       return;
-    } else if (lower === "ask") {
+    } else if (mainCmd === "ask") {
       setLines([...newLines, "", t.askStart, t.askName]);
       setAskStep({ step: "name" });
-    } else if (lower === "links") {
+    } else if (mainCmd === "links") {
       setLines([...newLines, t.linksHeader,
         { text: "  GitHub      → github.com/rodriwu",      url: "https://github.com/rodriwu" },
         { text: "  LinkedIn    → linkedin.com/in/rodriwu", url: "https://linkedin.com/in/rodriwu" },
@@ -495,17 +626,157 @@ export default function TerminalWindow({ locale = "en" }: { locale?: Locale }) {
         { text: "  X / Twitter → x.com/rodriwu",           url: "https://x.com/rodriwu" },
         "",
       ]);
-    } else if (lower in T.en && lower !== "links") {
-      const key = lower as keyof typeof t;
+    } else if (mainCmd === "whoami") {
+      setLines([...newLines, userName || "rodriwu", ""]);
+    } else if (mainCmd === "ls") {
+      const target = args[0] || ".";
+      const node = getNode(target, fs, cwd);
+      if (node && node.type === "dir") {
+        const items = Object.entries(node.children).map(([name, n]) => 
+          n.type === "dir" ? `${name}/` : name
+        );
+        setLines([...newLines, items.join("  "), ""]);
+      } else if (node && node.type === "file") {
+        setLines([...newLines, target, ""]);
+      } else {
+        setLines([...newLines, `ls: cannot access '${target}': No such file or directory`, ""]);
+      }
+    } else if (mainCmd === "cd") {
+      const target = args[0] || "~";
+      if (target === "~") {
+        setCwd([]);
+        setLines([...newLines]);
+      } else {
+        const node = getNode(target, fs, cwd);
+        if (node && node.type === "dir") {
+          // Resolve actual path
+          let segments = target.startsWith("/") ? target.split("/").filter(Boolean) : [...cwd, ...target.split("/").filter(Boolean)];
+          const resolved: string[] = [];
+          for (const seg of segments) {
+            if (seg === "..") resolved.pop();
+            else if (seg !== ".") resolved.push(seg);
+          }
+          setCwd(resolved);
+          setLines([...newLines]);
+        } else if (node && node.type === "file") {
+          setLines([...newLines, `cd: not a directory: ${target}`, ""]);
+        } else {
+          setLines([...newLines, `cd: no such file or directory: ${target}`, ""]);
+        }
+      }
+    } else if (mainCmd === "pwd") {
+      setLines([...newLines, `/${cwd.join("/")}`, ""]);
+    } else if (mainCmd === "cat") {
+      const target = args[0];
+      if (!target) {
+        setLines([...newLines, "usage: cat <filename>", ""]);
+      } else {
+        const node = getNode(target, fs, cwd);
+        if (node && node.type === "file") {
+          setLines([...newLines, ...node.content.split("\n"), ""]);
+        } else if (node && node.type === "dir") {
+          setLines([...newLines, `cat: ${target}: Is a directory`, ""]);
+        } else {
+          setLines([...newLines, `cat: ${target}: No such file or directory`, ""]);
+        }
+      }
+    } else if (mainCmd === "touch") {
+      const name = args[0];
+      if (!name) {
+        setLines([...newLines, "touch: missing file operand", ""]);
+      } else {
+        setFs(prev => {
+          const newFS = { ...prev };
+          let curr = newFS;
+          for (const seg of cwd) {
+            curr = curr.children[seg] as DirectoryNode;
+          }
+          if (!curr.children[name]) {
+            curr.children[name] = { type: "file", content: "" };
+          }
+          return newFS;
+        });
+        setLines([...newLines]);
+      }
+    } else if (mainCmd === "mkdir") {
+      const name = args[0];
+      if (!name) {
+        setLines([...newLines, "mkdir: missing operand", ""]);
+      } else {
+        setFs(prev => {
+          const newFS = { ...prev };
+          let curr = newFS;
+          for (const seg of cwd) {
+            curr = curr.children[seg] as DirectoryNode;
+          }
+          if (!curr.children[name]) {
+            curr.children[name] = { type: "dir", children: {} };
+          }
+          return newFS;
+        });
+        setLines([...newLines]);
+      }
+    } else if (mainCmd === "rm") {
+      const name = args[0];
+      if (!name) {
+        setLines([...newLines, "rm: missing operand", ""]);
+      } else {
+        setFs(prev => {
+          const newFS = { ...prev };
+          let curr = newFS;
+          for (const seg of cwd) {
+            curr = curr.children[seg] as DirectoryNode;
+          }
+          delete curr.children[name];
+          return newFS;
+        });
+        setLines([...newLines]);
+      }
+    } else if (mainCmd === "sudo") {
+      setLines([...newLines, `${userName || "rodriwu"} is not in the sudoers file. This incident will be reported.`, ""]);
+    } else if (mainCmd === "joke") {
+      const joke = JOKES[Math.floor(Math.random() * JOKES.length)];
+      setLines([...newLines, joke, ""]);
+    } else if (mainCmd === "weather") {
+      const weathers = ["Sunny ☀️", "Cloudy ☁️", "Rainy 🌧️", "Cyber-storm ⚡", "Glitchy 👾"];
+      const w = weathers[Math.floor(Math.random() * weathers.length)];
+      setLines([...newLines, `Current conditions: ${w}`, "Temperature: 24°C / 75°F", ""]);
+    } else if (mainCmd === "echo") {
+      setLines([...newLines, args.join(" "), ""]);
+    } else if (mainCmd === "date") {
+      setLines([...newLines, new Date().toString(), ""]);
+    } else if (mainCmd === "uname") {
+      setLines([...newLines, "Linux rodriwu-desktop 6.9.0-liquid #1 SMP PREEMPT_DYNAMIC Mon May 11 20:26 x86_64 GNU/Linux", ""]);
+    } else if (mainCmd === "c/run") {
+      const target = args[0];
+      if (!target) {
+        setLines([...newLines, "usage: c/run <program>", ""]);
+      } else if (target === "matrix") {
+        setLines([...newLines, "Compiling matrix.c...", "Linking...", "Running...", ""]);
+        setIsMatrixing(true);
+      } else if (target === "hello") {
+        setLines([...newLines, "Compiling hello.c...", "Linking...", "Running...", "Hello, World!", ""]);
+      } else {
+        const node = getNode(target, fs, cwd);
+        if (node && node.type === "file") {
+          setLines([...newLines, `Compiling ${target}...`, "Linking...", "Running...", ...node.content.split("\n"), ""]);
+        } else {
+          setLines([...newLines, `c/run: program '${target}' not found`, ""]);
+        }
+      }
+    } else if (mainCmd === "help") {
+      setLines([...newLines, ...t.help, "  ls, cd, pwd — navigate files", "  cat, touch, mkdir, rm — manage files", "  sudo, joke, weather — fun stuff", "  c/run       — run toys", ""]);
+    } else if (mainCmd in T.en && mainCmd !== "links") {
+      const key = mainCmd as keyof typeof t;
       const out = t[key];
       if (Array.isArray(out)) setLines([...newLines, ...out, ""]);
-    } else if (lower === "") {
+    } else if (mainCmd === "") {
       setLines(newLines);
     } else {
-      setLines([...newLines, `${t.notFound} ${lower}`, ""]);
+      setLines([...newLines, `${t.notFound} ${mainCmd}`, ""]);
     }
 
-    if (lower && lower !== "ask") setHistory((h) => [lower, ...h]);
+    if (mainCmd && mainCmd !== "ask") setHistory((h) => [trimmed, ...h]);
     setHistIdx(-1);
     setInput("");
   };

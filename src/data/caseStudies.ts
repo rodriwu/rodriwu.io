@@ -28,7 +28,7 @@ export const CASE_STUDIES: CaseStudy[] = [
     role: "UX Design, Creative Direction",
     deliverables: "Optimized Experience, CMS Dev, Design System",
     tagline: "Moving simplified.",
-    cover: "/case-studies/mp-cover.png",
+    cover: "https://framerusercontent.com/images/Wy7kJdr0RGp6Jdn5Ga6IqsAt48s.png",
     accent: "#f59e0b",
     size: "large",
     metrics: [
@@ -54,7 +54,7 @@ export const CASE_STUDIES: CaseStudy[] = [
     role: "UX Design, UI Design",
     deliverables: "Optimized Experience, Booking Flow",
     tagline: "Permits, painlessly.",
-    cover: "/case-studies/pp-cover.png",
+    cover: "https://framerusercontent.com/images/VHZaEeNa8nbta4tCbBaySIKY.png",
     accent: "#6366f1",
     size: "tall",
     metrics: [
@@ -80,7 +80,7 @@ export const CASE_STUDIES: CaseStudy[] = [
     role: "UX Design, Creative Direction",
     deliverables: "Optimized Experience, CMS Dev, Design System",
     tagline: "From good to great.",
-    cover: "/case-studies/hah-cover.png",
+    cover: "https://framerusercontent.com/images/y7xvRLi2Bc4K2Ji54TYS8Pi1d8.png",
     accent: "#0ea5e9",
     size: "wide",
     metrics: [
@@ -106,7 +106,7 @@ export const CASE_STUDIES: CaseStudy[] = [
     role: "UX Design",
     deliverables: "SMS Feature, User Flow",
     tagline: "One hub. All channels.",
-    cover: "/case-studies/hdmn-cover.png",
+    cover: "https://framerusercontent.com/images/coTFiZvMFRW5tpYV0IaG6n8fRY.png",
     accent: "#10b981",
     size: "small",
     metrics: [

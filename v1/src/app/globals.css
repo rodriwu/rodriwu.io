@@ -1,0 +1,388 @@
+@import url('https://fonts.googleapis.com/css2?family=Caveat:wght@400;600;700&display=swap');
+
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+
+/* ── Base ── */
+* {
+  cursor: default;
+  box-sizing: border-box;
+}
+
+button,
+a,
+[data-hover],
+[role="button"] {
+  cursor: pointer;
+}
+
+input,
+textarea {
+  cursor: text;
+}
+
+html {
+  scroll-behavior: smooth;
+  text-size-adjust: none;
+  -webkit-text-size-adjust: none;
+}
+
+body {
+  overflow: hidden;
+  user-select: none;
+  margin: 0;
+  padding: 0;
+}
+
+::selection {
+  background: rgba(128, 128, 128, 0.2);
+  color: inherit;
+}
+
+/* ── Dark mode (default) ── */
+:root {
+  --taskbar-bg: rgba(18, 18, 18, 0.9);
+  --taskbar-border: rgba(255, 255, 255, 0.06);
+  --taskbar-icon: rgba(255, 255, 255, 0.52);
+  --taskbar-icon-hover: rgba(255, 255, 255, 0.95);
+  --taskbar-icon-active-bg: rgba(255, 255, 255, 0.13);
+  --taskbar-icon-active-border: rgba(255, 255, 255, 0.1);
+  --taskbar-icon-press-bg: rgba(255, 255, 255, 0.08);
+  --desktop-icon-text: rgba(255, 255, 255, 0.92);
+  --desktop-icon-text-shadow: 0 1px 5px rgba(0, 0, 0, 0.9);
+  --desktop-icon-bg: rgba(30, 30, 30, 0.75);
+  --desktop-icon-border: rgba(255, 255, 255, 0.1);
+  --desktop-icon-hover-bg: rgba(50, 50, 50, 0.85);
+  --desktop-icon-selected-bg: rgba(255, 255, 255, 0.15);
+  --desktop-icon-selected-border: rgba(255, 255, 255, 0.28);
+  --window-bg: rgba(20, 20, 20, 0.94);
+  --window-border: rgba(255, 255, 255, 0.08);
+  --window-title-bg: rgba(28, 28, 28, 0.97);
+  --window-shadow: 0 12px 32px rgba(0,0,0,0.40), 0 3px 10px rgba(0,0,0,0.22), inset 0 0 0 0.5px rgba(255,255,255,0.04);
+  --text-primary: #ffffff;
+  --text-secondary: rgba(255, 255, 255, 0.5);
+  --text-tertiary: rgba(255, 255, 255, 0.3);
+  --accent: rgba(255, 255, 255, 0.9);
+  --separator: rgba(255, 255, 255, 0.06);
+  --grid-line: rgba(255, 255, 255, 0.08);
+  --canvas-bg: #0a0a0a;
+  --outer-bg: #111111;
+  --glass-bg: rgba(18, 18, 22, 0.55);
+  --glass-border: rgba(255, 255, 255, 0.08);
+  --glass-highlight: rgba(255, 255, 255, 0.06);
+  --glass-shadow: 0 8px 32px rgba(0, 0, 0, 0.4), 0 2px 8px rgba(0, 0, 0, 0.2);
+  --bottom-bar-bg: rgba(18, 18, 22, 0.6);
+  --drawer-bg: rgba(22, 22, 28, 0.78);
+  --safe-area-bottom: env(safe-area-inset-bottom, 0px);
+}
+
+/* ── Light mode ── */
+.light {
+  --taskbar-bg: rgba(210, 208, 200, 0.96);
+  --taskbar-border: rgba(0, 0, 20, 0.10);
+  --taskbar-icon: rgba(20, 25, 60, 0.52);
+  --taskbar-icon-hover: rgba(20, 25, 60, 0.90);
+  --taskbar-icon-active-bg: rgba(20, 25, 60, 0.10);
+  --taskbar-icon-active-border: rgba(20, 25, 60, 0.08);
+  --taskbar-icon-press-bg: rgba(20, 25, 60, 0.07);
+  --desktop-icon-text: rgba(10, 12, 35, 0.88);
+  --desktop-icon-text-shadow: 0 1px 4px rgba(200, 195, 180, 0.85);
+  --desktop-icon-bg: rgba(255, 252, 245, 0.38);
+  --desktop-icon-border: rgba(200, 190, 160, 0.28);
+  --desktop-icon-hover-bg: rgba(255, 252, 245, 0.72);
+  --desktop-icon-selected-bg: rgba(80, 90, 160, 0.10);
+  --desktop-icon-selected-border: rgba(80, 90, 160, 0.24);
+  --window-bg: rgba(245, 241, 232, 0.96);
+  --window-border: rgba(60, 55, 40, 0.10);
+  --window-title-bg: rgba(240, 236, 226, 0.98);
+  --window-shadow: 0 2px 10px rgba(0,0,0,0.05), 0 1px 3px rgba(0,0,0,0.04), inset 0 1px 0 rgba(255,255,255,0.80);
+  --text-primary: #0c0e22;
+  --text-secondary: rgba(20, 25, 60, 0.55);
+  --text-tertiary: rgba(20, 25, 60, 0.35);
+  --accent: rgba(20, 25, 60, 0.88);
+  --separator: rgba(60, 55, 40, 0.08);
+  --grid-line: rgba(50, 60, 110, 0.17);
+  --canvas-bg: #cec8ba;
+  --outer-bg: #b8b2a5;
+  --glass-bg: rgba(245, 242, 235, 0.55);
+  --glass-border: rgba(0, 0, 20, 0.08);
+  --glass-highlight: rgba(255, 255, 255, 0.5);
+  --glass-shadow: 0 8px 32px rgba(0, 0, 0, 0.08), 0 2px 8px rgba(0, 0, 0, 0.04);
+  --bottom-bar-bg: rgba(245, 242, 235, 0.65);
+  --drawer-bg: rgba(248, 245, 238, 0.82);
+}
+
+/* ── Taskbar ── */
+.taskbar {
+  background: var(--taskbar-bg);
+  backdrop-filter: blur(32px);
+  -webkit-backdrop-filter: blur(32px);
+  border-right: 1px solid var(--taskbar-border);
+}
+
+/* Mobile bottom bar override */
+.taskbar-bottom {
+  background: var(--bottom-bar-bg);
+  backdrop-filter: blur(40px) saturate(180%);
+  -webkit-backdrop-filter: blur(40px) saturate(180%);
+  border-top: 1px solid var(--glass-border);
+  border-right: none;
+  box-shadow: 0 -4px 24px rgba(0, 0, 0, 0.12), inset 0 1px 0 var(--glass-highlight);
+}
+
+/* Liquid glass utility */
+.liquid-glass {
+  background: var(--glass-bg);
+  backdrop-filter: blur(40px) saturate(180%);
+  -webkit-backdrop-filter: blur(40px) saturate(180%);
+  border: 1px solid var(--glass-border);
+  box-shadow: var(--glass-shadow), inset 0 1px 0 var(--glass-highlight);
+}
+
+.taskbar-icon {
+  color: var(--taskbar-icon);
+  transition: color 0.15s ease, background 0.15s ease, transform 0.1s ease;
+}
+
+@media (hover: hover) {
+  .taskbar-icon:hover {
+    color: var(--taskbar-icon-hover);
+    background: var(--taskbar-icon-active-bg);
+  }
+}
+
+.taskbar-icon:active {
+  background: var(--taskbar-icon-press-bg) !important;
+  transform: scale(0.88);
+  color: var(--taskbar-icon-hover);
+}
+
+/* ── Desktop Icons ── */
+.desktop-icon {
+  color: var(--desktop-icon-text);
+  transition: opacity 0.15s ease;
+}
+
+.desktop-icon .icon-frame {
+  background: var(--desktop-icon-bg);
+  border: 1px solid var(--desktop-icon-border);
+  border-radius: 16px;
+  backdrop-filter: blur(14px) saturate(160%);
+  -webkit-backdrop-filter: blur(14px) saturate(160%);
+  box-shadow:
+    0 4px 12px rgba(0, 0, 0, 0.10),
+    0 1px 3px rgba(0, 0, 0, 0.06),
+    inset 0 1px 0 rgba(255, 255, 255, 0.22);
+  transition: background 0.18s ease, box-shadow 0.18s ease;
+}
+
+@media (hover: hover) {
+  .desktop-icon:hover .icon-frame {
+    background: var(--desktop-icon-hover-bg);
+    box-shadow:
+      0 6px 18px rgba(0, 0, 0, 0.13),
+      0 2px 6px rgba(0, 0, 0, 0.08),
+      inset 0 1px 0 rgba(255, 255, 255, 0.30);
+  }
+}
+
+.desktop-icon.selected .icon-frame {
+  background: var(--desktop-icon-selected-bg);
+  border-color: var(--desktop-icon-selected-border);
+}
+
+.desktop-icon .icon-label {
+  text-shadow: var(--desktop-icon-text-shadow);
+}
+
+/* ── Window ── */
+.os-window {
+  background: var(--window-bg);
+  backdrop-filter: blur(40px);
+  -webkit-backdrop-filter: blur(40px);
+  border: 1px solid var(--window-border);
+  box-shadow:
+    0 12px 32px rgba(0, 0, 0, 0.12),
+    0 3px 10px rgba(0, 0, 0, 0.07),
+    0 0 0 0.5px rgba(255, 255, 255, 0.04) inset;
+}
+
+.os-window-titlebar {
+  background: var(--window-title-bg);
+  border-bottom: 1px solid var(--separator);
+}
+
+/* ── Ethereal background blobs ── */
+/* blob-1: sweeps full surface top-left ↔ bottom-right */
+@keyframes blob-drift-1 {
+  0%   { transform: translate(0%,    0%)    scale(1)    skew(0deg,    0deg);    border-radius: 60% 40% 55% 45% / 50% 60% 40% 50%; }
+  12%  { transform: translate(14%,   8%)    scale(1.05) skew(1deg,    0.5deg);  border-radius: 50% 50% 65% 35% / 55% 45% 60% 40%; }
+  26%  { transform: translate(26%,   6%)    scale(1.08) skew(0.5deg,  1deg);    border-radius: 65% 35% 50% 50% / 40% 60% 45% 55%; }
+  40%  { transform: translate(22%,  20%)    scale(1.05) skew(0deg,    0.5deg);  border-radius: 45% 55% 60% 40% / 60% 40% 55% 45%; }
+  54%  { transform: translate(8%,   28%)    scale(1.04) skew(-0.5deg, 0deg);    border-radius: 55% 45% 45% 55% / 50% 50% 50% 50%; }
+  67%  { transform: translate(-8%,  22%)    scale(1.06) skew(0.5deg,  0.5deg);  border-radius: 40% 60% 55% 45% / 45% 55% 40% 60%; }
+  80%  { transform: translate(-10%,  8%)    scale(1.02) skew(0deg,    0deg);    border-radius: 55% 45% 50% 50% / 55% 45% 50% 50%; }
+  92%  { transform: translate(-4%,   2%)    scale(1.04) skew(-0.5deg, 0.5deg);  border-radius: 50% 50% 58% 42% / 48% 52% 44% 56%; }
+  100% { transform: translate(0%,    0%)    scale(1)    skew(0deg,    0deg);    border-radius: 60% 40% 55% 45% / 50% 60% 40% 50%; }
+}
+
+/* blob-2: sweeps full surface bottom-right ↔ top-left */
+@keyframes blob-drift-2 {
+  0%   { transform: translate(0%,    0%)     scale(1)    skew(0deg,    0deg);    border-radius: 55% 45% 60% 40% / 60% 40% 55% 45%; }
+  15%  { transform: translate(-12%,  -8%)    scale(1.05) skew(-1deg,   0.5deg);  border-radius: 45% 55% 50% 50% / 50% 50% 60% 40%; }
+  30%  { transform: translate(-24%, -14%)    scale(1.08) skew(0deg,   -1deg);    border-radius: 60% 40% 45% 55% / 40% 60% 50% 50%; }
+  44%  { transform: translate(-28%, -26%)    scale(1.05) skew(0.5deg,  0deg);    border-radius: 50% 50% 55% 45% / 55% 45% 45% 55%; }
+  58%  { transform: translate(-16%, -32%)    scale(1.06) skew(0deg,    0.5deg);  border-radius: 40% 60% 60% 40% / 50% 50% 40% 60%; }
+  72%  { transform: translate(-4%,  -22%)    scale(1.03) skew(-0.5deg, 0deg);    border-radius: 50% 50% 50% 50% / 60% 40% 55% 45%; }
+  85%  { transform: translate(6%,   -8%)     scale(1.05) skew(0.5deg, -0.5deg);  border-radius: 58% 42% 52% 48% / 55% 45% 50% 50%; }
+  100% { transform: translate(0%,    0%)     scale(1)    skew(0deg,    0deg);    border-radius: 55% 45% 60% 40% / 60% 40% 55% 45%; }
+}
+
+/* blob-3: diagonal loop across centre */
+@keyframes blob-drift-3 {
+  0%   { transform: translate(0%,    0%)    scale(1)    skew(0deg,    0deg);    border-radius: 50% 50% 55% 45% / 45% 55% 50% 50%; }
+  18%  { transform: translate(-14%, -10%)   scale(1.06) skew(1deg,   -0.5deg);  border-radius: 60% 40% 45% 55% / 55% 45% 60% 40%; }
+  35%  { transform: translate(-22%, -22%)   scale(1.05) skew(0.5deg,  1deg);    border-radius: 45% 55% 60% 40% / 50% 50% 45% 55%; }
+  50%  { transform: translate(-10%, -30%)   scale(1.08) skew(0deg,    0.5deg);  border-radius: 55% 45% 50% 50% / 40% 60% 55% 45%; }
+  65%  { transform: translate(10%,  -24%)   scale(1.04) skew(-0.5deg, 0deg);    border-radius: 50% 50% 45% 55% / 55% 45% 50% 50%; }
+  80%  { transform: translate(16%,  -10%)   scale(1.05) skew(0.5deg,  0.5deg);  border-radius: 42% 58% 55% 45% / 48% 52% 42% 58%; }
+  92%  { transform: translate(6%,   -2%)    scale(1.02) skew(0deg,    0deg);    border-radius: 52% 48% 50% 50% / 50% 50% 52% 48%; }
+  100% { transform: translate(0%,    0%)    scale(1)    skew(0deg,    0deg);    border-radius: 50% 50% 55% 45% / 45% 55% 50% 50%; }
+}
+
+/* shared blob base */
+.ether-blob {
+  position: absolute;
+  filter: blur(90px);
+  pointer-events: none;
+  will-change: transform, border-radius;
+}
+
+/* blob sizes/positions — identical for both themes */
+.ether-blob-1 {
+  width: 90%;
+  height: 85%;
+  top: -20%;
+  left: -5%;
+  background: radial-gradient(ellipse at 40% 45%, rgba(130, 100, 220, 0.11), rgba(110, 80, 200, 0.045) 50%, transparent 75%);
+  animation: blob-drift-1 60s ease-in-out infinite;
+}
+.ether-blob-2 {
+  width: 85%;
+  height: 80%;
+  bottom: -20%;
+  right: -8%;
+  background: radial-gradient(ellipse at 55% 50%, rgba(60, 180, 200, 0.09), rgba(40, 160, 185, 0.036) 50%, transparent 75%);
+  animation: blob-drift-2 75s ease-in-out infinite;
+}
+.ether-blob-3 {
+  width: 68%;
+  height: 70%;
+  top: 10%;
+  right: 0%;
+  background: radial-gradient(ellipse at 50% 45%, rgba(180, 100, 230, 0.08), rgba(160, 80, 215, 0.032) 50%, transparent 75%);
+  animation: blob-drift-3 50s ease-in-out infinite;
+}
+
+/* light mode — highlighter lime + orange palette */
+.ether-blob-1.light {
+  background: radial-gradient(ellipse at 40% 45%, rgba(165, 230, 15, 0.07), rgba(140, 210, 10, 0.022) 50%, transparent 75%);
+}
+.ether-blob-2.light {
+  background: radial-gradient(ellipse at 55% 50%, rgba(255, 145, 20, 0.11), rgba(240, 118, 12, 0.036) 50%, transparent 75%);
+}
+.ether-blob-3.light {
+  background: radial-gradient(ellipse at 50% 45%, rgba(190, 238, 12, 0.06), rgba(168, 220, 8, 0.019) 50%, transparent 75%);
+}
+
+/* ── Spin (loader) ── */
+@keyframes spin {
+  to { transform: rotate(360deg); }
+}
+
+/* ── Onboard Work button pulse ── */
+@keyframes work-pulse {
+  0%, 100% { opacity: 0.85; box-shadow: 0 0 8px rgba(120,80,255,0.30); }
+  50%       { opacity: 0.30; box-shadow: 0 0 18px rgba(120,80,255,0.12); }
+}
+
+/* ── Focus visible — accessible keyboard navigation ── */
+:focus-visible {
+  outline: 2px solid rgba(130, 100, 255, 0.7);
+  outline-offset: 2px;
+  border-radius: 4px;
+}
+
+/* Suppress focus ring for mouse users on taskbar buttons */
+.taskbar-icon:focus:not(:focus-visible) {
+  outline: none;
+}
+
+/* ── Boot ── */
+@keyframes blink {
+  0%, 50% { opacity: 1; }
+  51%, 100% { opacity: 0; }
+}
+
+.boot-cursor {
+  animation: blink 1s step-end infinite;
+}
+
+/* ── Scanline ── */
+.scanline-overlay::after {
+  content: "";
+  position: absolute;
+  inset: 0;
+  background: repeating-linear-gradient(
+    0deg,
+    transparent,
+    transparent 2px,
+    rgba(0, 0, 0, 0.01) 2px,
+    rgba(0, 0, 0, 0.01) 4px
+  );
+  pointer-events: none;
+  z-index: 9990;
+}
+
+/* ── Mobile touch ── */
+@media (max-width: 1023px) {
+  .taskbar-bottom .taskbar-icon {
+    min-width: 44px;
+    min-height: 44px;
+  }
+}
+
+/* ── v2 — hide horizontal scrollbar on gallery ── */
+.rw-scroller::-webkit-scrollbar {
+  display: none;
+}
+.rw-scroller {
+  scrollbar-width: none;
+}
+
+/* ── v2 — case thumbnail hover ── */
+.rw-thumb img {
+  transition: transform 0.6s cubic-bezier(0.16, 1, 0.3, 1);
+}
+@media (hover: hover) {
+  .rw-thumb:hover img {
+    transform: scale(1.035);
+  }
+}
+
+/* ── Scrollbar ── */
+.os-window ::-webkit-scrollbar {
+  width: 5px;
+}
+.os-window ::-webkit-scrollbar-track {
+  background: transparent;
+}
+.os-window ::-webkit-scrollbar-thumb {
+  background: var(--text-tertiary);
+  border-radius: 3px;
+}
+.os-window ::-webkit-scrollbar-thumb:hover {
+  background: var(--text-secondary);
+}

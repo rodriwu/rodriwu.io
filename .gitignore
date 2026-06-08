@@ -20,3 +20,13 @@ yarn-error.log*
 # vercel
 .vercel
 public/ambient.mp4
+**/public/ambient.mp4
+
+# stray media downloads (not part of the repo)
+/YTDown_*.mp4
+/*.mp4
+
+# next.js build artifacts in subfolders
+**/.next/
+**/node_modules
+**/tsconfig.tsbuildinfo

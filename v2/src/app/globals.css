@@ -23,8 +23,17 @@ textarea {
   cursor: text;
 }
 
+/* Custom cursor takes over on fine-pointer devices; hide native cursor.
+   Touch / coarse-pointer devices keep the native pointer. */
+@media (hover: hover) and (pointer: fine) {
+  *,
+  *::before,
+  *::after {
+    cursor: none !important;
+  }
+}
+
 html {
-  scroll-behavior: smooth;
   text-size-adjust: none;
   -webkit-text-size-adjust: none;
 }
@@ -57,6 +66,28 @@ html:not(.light) body {
 ::selection {
   background: rgba(128, 128, 128, 0.2);
   color: inherit;
+}
+
+/* Layout tokens for the case-study template. Used by full-bleed media
+   so it spans the viewport minus the sidebar (and centers in that area)
+   regardless of where in the layout tree the breakout originates. */
+:root {
+  --rw-sidebar: 56px;
+  --rw-body-max: 1240px;
+  --rw-body-pad: clamp(20px, 5vw, 64px);
+  --rw-toc-width: 220px;
+  --rw-toc-gap: 72px;
+  /* Horizontal distance from the body wrapper's content-box left edge to
+     the section column where blocks render. = TOC + gap on desktop, 0 on
+     mobile (the TOC collapses to a top bar). Full-bleed math subtracts
+     this so the image lands at the viewport's left edge (post-sidebar). */
+  --rw-toc-offset: calc(var(--rw-toc-width) + var(--rw-toc-gap));
+}
+@media (max-width: 1023px) {
+  :root {
+    --rw-sidebar: 0px;
+    --rw-toc-offset: 0px;
+  }
 }
 
 /* ── Dark mode (default) ── */
@@ -94,6 +125,8 @@ html:not(.light) body {
   --bottom-bar-bg: rgba(18, 18, 22, 0.6);
   --drawer-bg: rgba(22, 22, 28, 0.78);
   --safe-area-bottom: env(safe-area-inset-bottom, 0px);
+  --cursor-outline: rgba(0, 0, 0, 0.45);
+  --accent-highlight: #CFF24A;
 }
 
 /* ── Light mode ── */
@@ -130,6 +163,8 @@ html:not(.light) body {
   --glass-shadow: 0 8px 32px rgba(0, 0, 0, 0.08), 0 2px 8px rgba(0, 0, 0, 0.04);
   --bottom-bar-bg: rgba(245, 242, 235, 0.65);
   --drawer-bg: rgba(248, 245, 238, 0.82);
+  --cursor-outline: rgba(255, 255, 255, 0.65);
+  --accent-highlight: #7B5CF6;
 }
 
 /* ── Taskbar ── */
@@ -372,6 +407,18 @@ html:not(.light) body {
   }
 }
 
+/* ── Hero headline — desktop one-line, mobile three-line stack ── */
+.hero-headline {
+  white-space: nowrap;
+}
+.hero-segment { display: inline; }
+.hero-spacer { display: inline; }
+@media (max-width: 1023px) {
+  .hero-headline { white-space: normal; }
+  .hero-segment { display: block; }
+  .hero-spacer { display: none; }
+}
+
 /* ── v2 — hide horizontal scrollbar on gallery ── */
 .rw-scroller::-webkit-scrollbar {
   display: none;
@@ -380,17 +427,24 @@ html:not(.light) body {
   scrollbar-width: none;
 }
 
-/* ── v2 — case thumbnail (no transform hover; we don't want to fight drag) ── */
+/* ── v2 — case thumbnail: elegant lift + shadow on hover ── */
 .rw-thumb {
-  transition: border-color 0.25s ease;
+  transition:
+    transform 0.7s cubic-bezier(0.22, 0.61, 0.36, 1),
+    box-shadow 0.7s cubic-bezier(0.22, 0.61, 0.36, 1);
+  will-change: transform;
 }
 @media (hover: hover) {
-  /* keep border-only hover so dragging never causes pixels to shift */
   .rw-thumb:hover {
-    border-color: rgba(255,255,255,0.32) !important;
+    transform: translateY(-6px) scale(1.02);
+    box-shadow:
+      0 36px 70px rgba(255, 255, 255, 0.08),
+      0 14px 24px rgba(255, 255, 255, 0.04);
   }
   html.light .rw-thumb:hover {
-    border-color: rgba(10,12,35,0.32) !important;
+    box-shadow:
+      0 36px 70px rgba(10, 12, 35, 0.12),
+      0 14px 24px rgba(10, 12, 35, 0.06);
   }
 }
 

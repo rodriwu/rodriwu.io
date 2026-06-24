@@ -20,3 +20,6 @@ yarn-error.log*
 # vercel
 .vercel
 public/ambient.mp4
+
+# raw source assets (processed copies live in public/)
+CASE STUDY ASSETS/

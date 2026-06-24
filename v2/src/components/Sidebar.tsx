@@ -2,7 +2,7 @@
 
 import { useEffect, useRef, useState, useCallback } from "react";
 import Link from "next/link";
-import { Sun, Moon, Wifi, Volume2, VolumeX, Globe, ChevronLeft, ChevronRight, Terminal as TerminalIcon } from "lucide-react";
+import { Sun, Moon, Wifi, Volume2, VolumeX, Globe, ChevronLeft, ChevronRight, Terminal as TerminalIcon, Home } from "lucide-react";
 import { useShell } from "./context/ShellContext";
 
 const DAYS = ["Su", "Mo", "Tu", "We", "Th", "Fr", "Sa"];
@@ -131,12 +131,20 @@ export default function Sidebar() {
       {/* Top: avatar → back to gallery */}
       <div className="flex flex-col items-center gap-2">
         <Link
-          href="/"
+          href="/about"
           className="taskbar-icon flex items-center justify-center rounded-full overflow-hidden"
-          style={{ width: 36, height: 36, flexShrink: 0, backgroundImage: "url('/profile.png')", backgroundSize: "cover", backgroundPosition: "center 20%" }}
-          title="Back to gallery"
+          style={{ width: 36, height: 36, flexShrink: 0, backgroundImage: `url('${isDark ? "/profile.png" : "/profile-light.png"}')`, backgroundSize: "cover", backgroundPosition: "center 20%" }}
+          title="About me"
         />
         <div className="w-6" style={{ borderTop: "1px solid var(--separator)" }} />
+        <Link
+          href="/"
+          className="taskbar-icon rounded-xl flex items-center justify-center"
+          style={{ width: 38, height: 38 }}
+          title="Home"
+        >
+          <Home size={16} strokeWidth={1.5} />
+        </Link>
         <button
           onClick={toggleTerminal}
           className="taskbar-icon rounded-xl flex items-center justify-center"
@@ -149,9 +157,6 @@ export default function Sidebar() {
         >
           <TerminalIcon size={16} strokeWidth={1.5} />
         </button>
-        <div className="font-mono" style={{ fontSize: 8, color: "var(--text-tertiary)", letterSpacing: "0.12em", writingMode: "vertical-rl", transform: "rotate(180deg)", marginTop: 8 }}>
-          rodriwu / v2
-        </div>
       </div>
 
       {/* Middle: nothing (placeholder) */}
@@ -191,7 +196,7 @@ export default function Sidebar() {
           )}
         </div>
 
-        <button onClick={toggleMute} className="taskbar-icon rounded-lg flex items-center justify-center" style={{ width: 34, height: 34 }} title={isMuted ? "Unmute" : "Mute"}>
+        <button onClick={toggleMute} className="taskbar-icon rounded-lg items-center justify-center hidden lg:flex" style={{ width: 34, height: 34 }} title={isMuted ? "Unmute" : "Mute"}>
           {isMuted ? <VolumeX size={14} strokeWidth={1.5} /> : <Volume2 size={14} strokeWidth={1.5} />}
         </button>
 

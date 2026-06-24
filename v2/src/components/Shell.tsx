@@ -4,7 +4,9 @@ import { useEffect, useState } from "react";
 import MusicWidget from "@/components/MusicWidget";
 import { ShellProvider, useShell } from "./context/ShellContext";
 import Sidebar from "./Sidebar";
+import MobileNav from "./MobileNav";
 import Terminal from "./Terminal";
+import CustomCursor from "./CustomCursor";
 
 function ShellInner({ children }: { children: React.ReactNode }) {
   const {
@@ -40,10 +42,14 @@ function ShellInner({ children }: { children: React.ReactNode }) {
       {/* Sidebar (desktop only) — fixed to viewport */}
       {!isMobile && <Sidebar />}
 
+      {/* Mobile top nav */}
+      {isMobile && <MobileNav />}
+
       {/* Page content scrolls naturally with body */}
       <div
         style={{
           paddingLeft: isMobile ? 0 : 56,
+          paddingTop: isMobile ? 56 : 0,
         }}
       >
         {children}
@@ -52,8 +58,11 @@ function ShellInner({ children }: { children: React.ReactNode }) {
       {/* Terminal drawer */}
       <Terminal />
 
-      {/* Music widget — fixed bottom-right */}
-      {!isMuted && (
+      {/* Custom cursor — fine-pointer devices only */}
+      <CustomCursor />
+
+      {/* Music widget — fixed bottom-right, desktop only */}
+      {!isMobile && !isMuted && (
         <MusicWidget
           isPlaying={isPlaying}
           isMuted={isMuted}

@@ -6,14 +6,14 @@ import ContactBody from "../ContactBody";
 
 const T = {
   en: {
-    label: "CONTACT.exe",
+    label: "Get in touch",
     eyebrow: "Do I have your attention?",
     heading: "Hit me up.",
     sub: "Open to projects, collaborations, and conversations. Response usually within 24h.",
     footer: "© Rodriwu. All rights reserved. · Eat fruits and vegetables.",
   },
   es: {
-    label: "CONTACTO.exe",
+    label: "Contáctame",
     eyebrow: "¿Tengo tu atención?",
     heading: "Escríbeme.",
     sub: "Abierto a proyectos, colaboraciones y conversaciones. Respondo normalmente en 24h.",
@@ -32,6 +32,7 @@ export default function ContactPanel() {
 
   return (
     <section
+      id="contact"
       style={{
         minHeight: "100vh",
         width: "100%",
@@ -71,12 +72,6 @@ export default function ContactPanel() {
         >
           {/* Header — centered */}
           <div style={{ textAlign: "center", marginBottom: 48 }}>
-            <div className="font-mono" style={{ fontSize: 10, letterSpacing: "0.18em", color: fade, marginBottom: 18, display: "flex", alignItems: "center", justifyContent: "center", gap: 8 }}>
-              <span style={{ flex: 1, borderTop: `1px solid ${fade}`, maxWidth: 60 }} />
-              <span style={{ color: dim }}>outro</span>
-              <span style={{ flex: 1, borderTop: `1px solid ${fade}`, maxWidth: 60 }} />
-            </div>
-
             <p style={{ fontSize: 18, fontWeight: 400, color: dim, marginBottom: 14, letterSpacing: "-0.01em" }}>
               {t.eyebrow}
             </p>

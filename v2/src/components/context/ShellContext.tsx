@@ -38,7 +38,7 @@ export function useShell(): ShellState {
 }
 
 export function ShellProvider({ children }: { children: React.ReactNode }) {
-  const [isDark, setIsDark] = useState(false);
+  const [isDark, setIsDark] = useState(true);
   const [locale, setLocale] = useState<Locale>("en");
   const [terminalOpen, setTerminalOpen] = useState(false);
 
@@ -49,23 +49,22 @@ export function ShellProvider({ children }: { children: React.ReactNode }) {
   const [currentTime, setCurrentTime] = useState(0);
   const [duration, setDuration] = useState(0);
 
-  /* ── Theme — system preference on mount, persists user choice ── */
+  /* ── Theme — read once on mount; the actual class is already set by the
+       blocking script in <head> (layout.tsx), so state just mirrors it. ── */
   useEffect(() => {
     const saved = localStorage.getItem("v2-theme");
-    if (saved === "dark") setIsDark(true);
-    else if (saved === "light") setIsDark(false);
-    else {
-      const mq = window.matchMedia("(prefers-color-scheme: dark)");
-      setIsDark(mq.matches);
-    }
+    if (saved === "light") setIsDark(false);
+    // dark is the default — no saved preference means stay dark
   }, []);
 
+  /* Mirror state → DOM class. No localStorage write here — only explicit
+     user actions persist a choice (see toggle/setIsDark in the value). */
   useEffect(() => {
     if (typeof document === "undefined") return;
     if (isDark) document.documentElement.classList.remove("light");
     else document.documentElement.classList.add("light");
-    localStorage.setItem("v2-theme", isDark ? "dark" : "light");
   }, [isDark]);
+
 
   /* ── Audio — created once, persists across navigation ── */
   useEffect(() => {
@@ -127,10 +126,14 @@ export function ShellProvider({ children }: { children: React.ReactNode }) {
     setCurrentTime(t);
   };
 
+  const persistTheme = (dark: boolean) => {
+    try { localStorage.setItem("v2-theme", dark ? "dark" : "light"); } catch {}
+  };
+
   const value = useMemo<ShellState>(() => ({
     isDark,
-    toggleTheme: () => setIsDark(d => !d),
-    setIsDark,
+    toggleTheme: () => setIsDark(d => { const n = !d; persistTheme(n); return n; }),
+    setIsDark: (v: boolean) => { persistTheme(v); setIsDark(v); },
     locale,
     setLocale,
     isPlaying,

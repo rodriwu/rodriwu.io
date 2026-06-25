@@ -2,8 +2,8 @@
 
 import Link from "next/link";
 import { useEffect, useRef, useState } from "react";
-import { motion } from "framer-motion";
-import { ArrowLeft, ArrowRight, ArrowUpRight, X, Check, Dot } from "lucide-react";
+import { motion, AnimatePresence } from "framer-motion";
+import { ArrowLeft, ArrowRight, ArrowUp, ArrowUpRight, X, Check, Dot } from "lucide-react";
 import { useShell } from "./context/ShellContext";
 import {
   CASE_STUDIES,
@@ -47,15 +47,118 @@ export default function CaseDetail({ cs }: { cs: CaseStudy }) {
       </article>
 
       {sections.length > 0 ? (
-        <Body sections={sections} accent={accent} ink={ink} body={body} dim={dim} fade={fade} cardBg={cardBg} />
+        <Body sections={sections} accent={accent} ink={ink} body={body} dim={dim} fade={fade} cardBg={cardBg} isDark={isDark} />
       ) : (
         <FallbackBody cs={cs} ink={ink} body={body} dim={dim} fade={fade} cardBg={cardBg} />
       )}
 
       <article style={{ maxWidth: 1240, margin: "0 auto", padding: "0 var(--rw-body-pad) 80px" }}>
+        {cs.conclusion && (
+          <Conclusion conclusion={cs.conclusion} ink={ink} body={body} dim={dim} fade={fade} accent={accent} isDark={isDark} />
+        )}
         <NextCase next={next} accent={accent} ink={ink} dim={dim} fade={fade} cardBg={cardBg} />
         <ContactCTA accent={accent} ink={ink} body={body} dim={dim} fade={fade} />
       </article>
+    </div>
+  );
+}
+
+/* ──────────────────────────────────────────────────────────────
+   Cover Carousel
+   ────────────────────────────────────────────────────────────── */
+function CoverCarousel({
+  images, alt, cardBg, accent, fade,
+}: {
+  images: string[]; alt: string;
+  cardBg: string; accent: string; dim: string; fade: string;
+}) {
+  const [idx, setIdx] = useState(0);
+  const [dir, setDir] = useState(1); // 1 = forward, -1 = backward
+  const dragStart = useRef(0);
+
+  const go = (next: number, d: number) => { setDir(d); setIdx(next); };
+  const prev = () => go((idx - 1 + images.length) % images.length, -1);
+  const next = () => go((idx + 1) % images.length, 1);
+
+  const onPointerDown = (e: React.PointerEvent) => { dragStart.current = e.clientX; };
+  const onPointerUp   = (e: React.PointerEvent) => {
+    const delta = e.clientX - dragStart.current;
+    if (Math.abs(delta) > 44) delta < 0 ? next() : prev();
+  };
+
+  useEffect(() => {
+    const onKey = (e: KeyboardEvent) => {
+      if (e.key === "ArrowLeft")  prev();
+      if (e.key === "ArrowRight") next();
+    };
+    window.addEventListener("keydown", onKey);
+    return () => window.removeEventListener("keydown", onKey);
+  });
+
+  /* Aspect ratio locked to first image: 1536 × 999 */
+  const ASPECT = "1536 / 999";
+
+  return (
+    <div
+      style={{ position: "relative", width: "100%", userSelect: "none" }}
+      onPointerDown={onPointerDown}
+      onPointerUp={onPointerUp}
+    >
+      {/* Fixed-ratio frame */}
+      <div style={{ position: "relative", width: "100%", aspectRatio: ASPECT, overflow: "hidden", background: cardBg }}>
+        <AnimatePresence initial={false}>
+          <motion.div
+            key={idx}
+            initial={{ x: `${dir * 100}%`, opacity: 0.72 }}
+            animate={{ x: 0, opacity: 1 }}
+            exit={{ x: `${dir * -100}%`, opacity: 0.72 }}
+            transition={{ duration: 0.46, ease: [0.32, 0.72, 0, 1] }}
+            style={{ position: "absolute", inset: 0 }}
+          >
+            {/* eslint-disable-next-line @next/next/no-img-element */}
+            <img
+              src={images[idx]}
+              alt={`${alt} — ${idx + 1}`}
+              draggable={false}
+              style={{ width: "100%", height: "100%", objectFit: "cover", objectPosition: "center", display: "block" }}
+            />
+          </motion.div>
+        </AnimatePresence>
+
+        {/* Subtle gradient at bottom so controls don't fight with bright images */}
+        <div style={{ position: "absolute", bottom: 0, left: 0, right: 0, height: 96, background: "linear-gradient(to top, rgba(0,0,0,0.45) 0%, transparent 100%)", pointerEvents: "none", zIndex: 1 }} />
+
+        {/* Prev / Next */}
+        <button onClick={prev} aria-label="Previous" style={{ position: "absolute", left: 16, top: "50%", transform: "translateY(-50%)", background: "rgba(0,0,0,0.48)", border: "1px solid rgba(255,255,255,0.12)", borderRadius: "50%", width: 40, height: 40, cursor: "pointer", display: "flex", alignItems: "center", justifyContent: "center", color: "#fff", backdropFilter: "blur(8px)", zIndex: 2, transition: "background 0.18s ease" }}
+          onMouseEnter={(e) => (e.currentTarget.style.background = "rgba(0,0,0,0.72)")}
+          onMouseLeave={(e) => (e.currentTarget.style.background = "rgba(0,0,0,0.48)")}
+        >
+          <ArrowLeft size={16} strokeWidth={2} />
+        </button>
+        <button onClick={next} aria-label="Next" style={{ position: "absolute", right: 16, top: "50%", transform: "translateY(-50%)", background: "rgba(0,0,0,0.48)", border: "1px solid rgba(255,255,255,0.12)", borderRadius: "50%", width: 40, height: 40, cursor: "pointer", display: "flex", alignItems: "center", justifyContent: "center", color: "#fff", backdropFilter: "blur(8px)", zIndex: 2, transition: "background 0.18s ease" }}
+          onMouseEnter={(e) => (e.currentTarget.style.background = "rgba(0,0,0,0.72)")}
+          onMouseLeave={(e) => (e.currentTarget.style.background = "rgba(0,0,0,0.48)")}
+        >
+          <ArrowRight size={16} strokeWidth={2} />
+        </button>
+
+        {/* Dots + counter */}
+        <div style={{ position: "absolute", bottom: 16, left: 0, right: 0, display: "flex", alignItems: "center", justifyContent: "center", gap: 10, zIndex: 2 }}>
+          <div style={{ display: "flex", gap: 5, alignItems: "center" }}>
+            {images.map((_, i) => (
+              <button
+                key={i}
+                onClick={() => go(i, i > idx ? 1 : -1)}
+                aria-label={`Image ${i + 1}`}
+                style={{ width: i === idx ? 22 : 6, height: 6, borderRadius: 999, background: i === idx ? accent : "rgba(255,255,255,0.35)", border: "none", cursor: "pointer", padding: 0, transition: "width 0.22s ease, background 0.22s ease", flexShrink: 0 }}
+              />
+            ))}
+          </div>
+          <span className="font-mono" style={{ fontSize: 9, letterSpacing: "0.14em", color: "rgba(255,255,255,0.65)", background: "rgba(0,0,0,0.42)", padding: "3px 9px", borderRadius: 999, backdropFilter: "blur(6px)" }}>
+            {idx + 1} / {images.length}
+          </span>
+        </div>
+      </div>
     </div>
   );
 }
@@ -124,10 +227,15 @@ function Hero({
           initial={{ opacity: 0, scale: 0.985 }}
           animate={{ opacity: 1, scale: 1 }}
           transition={{ duration: 0.6, ease: [0.16, 1, 0.3, 1] }}
-          style={{ position: "relative", width: "100%", maxWidth: "calc(90vh * 16 / 9)", aspectRatio: "16 / 9", overflow: "hidden", background: cardBg, margin: "0 auto" }}
         >
-          {/* eslint-disable-next-line @next/next/no-img-element */}
-          <img src={cs.cover} alt={cs.shortTitle} style={{ position: "absolute", inset: 0, width: "100%", height: "100%", objectFit: "cover", objectPosition: "top center" }} />
+          {cs.coverCarousel && cs.coverCarousel.length > 1 ? (
+            <CoverCarousel images={cs.coverCarousel} alt={cs.shortTitle} cardBg={cardBg} accent={accent} dim={dim} fade={fade} />
+          ) : (
+            <div style={{ position: "relative", width: "100%", maxWidth: "calc(90vh * 16 / 9)", aspectRatio: "16 / 9", overflow: "hidden", background: cardBg, margin: "0 auto" }}>
+              {/* eslint-disable-next-line @next/next/no-img-element */}
+              <img src={cs.cover} alt={cs.shortTitle} style={{ position: "absolute", inset: 0, width: "100%", height: "100%", objectFit: "contain" }} />
+            </div>
+          )}
         </motion.div>
 
         {/* Metadata strip — 2×2 on mobile, 4-col on desktop */}
@@ -163,15 +271,18 @@ function Hero({
    Body — sticky TOC on desktop, static TOC on mobile
    ────────────────────────────────────────────────────────────── */
 function Body({
-  sections, accent, ink, body, dim, fade, cardBg,
+  sections, accent, ink, body, dim, fade, cardBg, isDark,
 }: {
   sections: CaseSection[]; accent: string;
-  ink: string; body: string; dim: string; fade: string; cardBg: string;
+  ink: string; body: string; dim: string; fade: string; cardBg: string; isDark: boolean;
 }) {
   const [activeId, setActiveId] = useState<string>(sections[0]?.id ?? "");
   const [pastHero, setPastHero] = useState(false);
   const bodyRootRef = useRef<HTMLDivElement>(null);
   const [isWide, setIsWide] = useState(true);
+  const [tocCovered, setTocCovered] = useState(false);
+  const [lightbox, setLightbox] = useState<{ src: string; alt: string } | null>(null);
+  const openLightbox = (src: string, alt?: string) => setLightbox({ src, alt: alt ?? "" });
 
   useEffect(() => {
     const update = () => setIsWide(window.innerWidth >= 1024);
@@ -190,6 +301,35 @@ function Body({
     window.addEventListener("scroll", onScroll, { passive: true });
     return () => window.removeEventListener("scroll", onScroll);
   }, []);
+
+  /* Fade the desktop TOC out when a full-width white card (PhoneFlow) crosses
+     behind it. The TOC sticks at top: 40 and is roughly 360px tall — when the
+     card's vertical band overlaps that range, hide the TOC; bring it back as
+     soon as the card has scrolled out of that region. */
+  useEffect(() => {
+    if (!isWide) {
+      setTocCovered(false);
+      return;
+    }
+    const TOC_TOP = 40;
+    const TOC_BOTTOM = 360;
+    const checkOverlap = () => {
+      const cards = document.querySelectorAll<HTMLElement>("[data-fullbleed-card]");
+      let overlap = false;
+      cards.forEach((card) => {
+        const r = card.getBoundingClientRect();
+        if (r.top < TOC_BOTTOM && r.bottom > TOC_TOP) overlap = true;
+      });
+      setTocCovered(overlap);
+    };
+    checkOverlap();
+    window.addEventListener("scroll", checkOverlap, { passive: true });
+    window.addEventListener("resize", checkOverlap, { passive: true });
+    return () => {
+      window.removeEventListener("scroll", checkOverlap);
+      window.removeEventListener("resize", checkOverlap);
+    };
+  }, [isWide, sections]);
 
   useEffect(() => {
     if (sections.length === 0) return;
@@ -215,6 +355,8 @@ function Body({
   };
 
   return (
+    <>
+    {lightbox && <LightboxOverlay src={lightbox.src} alt={lightbox.alt} onClose={() => setLightbox(null)} />}
     <div ref={bodyRootRef} style={{ maxWidth: 1240, margin: "0 auto", padding: "0 var(--rw-body-pad)" }}>
       <div style={{ display: "grid", gridTemplateColumns: isWide ? "220px 1fr" : "1fr", gap: isWide ? 72 : 0, alignItems: "start" }}>
 
@@ -224,10 +366,10 @@ function Body({
             aria-label="Table of contents"
             style={{
               position: "sticky", top: 40, alignSelf: "start",
-              opacity: pastHero ? 1 : 0,
+              opacity: pastHero && !tocCovered ? 1 : 0,
               transform: pastHero ? "translateY(0)" : "translateY(-6px)",
               transition: "opacity 0.35s ease, transform 0.35s ease",
-              pointerEvents: pastHero ? "auto" : "none",
+              pointerEvents: pastHero && !tocCovered ? "auto" : "none",
             }}
           >
             <div className="font-mono" style={{ fontSize: 9, letterSpacing: "0.22em", color: dim, marginBottom: 16, textTransform: "uppercase" }}>
@@ -297,39 +439,80 @@ function Body({
             const num = String(si + 1).padStart(2, "0");
             const eyebrow = s.eyebrow ?? `${num} — ${s.label}`;
             const firstParagraphIdx = s.blocks.findIndex((b) => b.type === "p");
+            const isOutsourced = s.variant === "outsourced";
+            const outsourcedBg = isDark ? "rgba(255,255,255,0.038)" : "rgba(0,0,0,0.032)";
+            const outsourcedBorder = isDark ? "rgba(255,255,255,0.09)" : "rgba(0,0,0,0.09)";
+
+            // Group blocks: "phoneFlow" renders at full section width; all others stay in the 820px column.
+            type BG = { fullWidth: boolean; items: { blk: CaseBlock; idx: number }[] };
+            const blockGroups: BG[] = [];
+            s.blocks.forEach((blk, i) => {
+              const fw = blk.type === "phoneFlow";
+              const last = blockGroups[blockGroups.length - 1];
+              if (!last || last.fullWidth !== fw) blockGroups.push({ fullWidth: fw, items: [{ blk, idx: i }] });
+              else last.items.push({ blk, idx: i });
+            });
+
+            const renderBlockGroup = (bg: BG, gi: number) => {
+              const els = bg.items.map(({ blk, idx }) => (
+                <Block key={idx} blk={blk} isLead={idx === firstParagraphIdx} isMobile={!isWide}
+                  accent={accent} ink={ink} body={body} dim={dim} fade={fade} cardBg={cardBg} onImageOpen={openLightbox} />
+              ));
+              if (bg.fullWidth) return <div key={`bg-${gi}`} style={{ marginTop: gi > 0 ? 32 : 0 }}>{els}</div>;
+              return (
+                <div key={`bg-${gi}`} style={{ display: "flex", flexDirection: "column", gap: 22, maxWidth: 820, marginTop: gi > 0 ? 32 : 0 }}>
+                  {els}
+                </div>
+              );
+            };
+
+            const blocksContent = <>{blockGroups.map((bg, gi) => renderBlockGroup(bg, gi))}</>;
+
             return (
               <section key={s.id} id={`section-${s.id}`} style={{ paddingTop: 28, paddingBottom: 56, scrollMarginTop: 40 }}>
                 <p className="font-mono" style={{ fontSize: 10, letterSpacing: "0.20em", color: dim, marginBottom: 14, textTransform: "uppercase" }}>
                   {eyebrow}
                 </p>
-                <h2
-                  className="font-mono"
-                  style={{ fontSize: "clamp(26px, 3.6vw, 46px)", fontWeight: 500, color: ink, lineHeight: 1.06, letterSpacing: "-0.035em", marginBottom: 32, maxWidth: 820 }}
-                >
-                  {s.heading}
-                </h2>
-                <div style={{ display: "flex", flexDirection: "column", gap: 22, maxWidth: 820 }}>
-                  {s.blocks.map((blk, i) => (
-                    <Block
-                      key={i}
-                      blk={blk}
-                      isLead={i === firstParagraphIdx}
-                      isMobile={!isWide}
-                      accent={accent}
-                      ink={ink}
-                      body={body}
-                      dim={dim}
-                      fade={fade}
-                      cardBg={cardBg}
-                    />
-                  ))}
-                </div>
+
+                {/* Heading — two-column when sideNote is present */}
+                {s.sideNote ? (
+                  <div style={{ display: "grid", gridTemplateColumns: isWide ? "1fr 1fr" : "1fr", gap: isWide ? 48 : 10, marginBottom: isOutsourced ? 20 : 36 }}>
+                    <h2 className="font-mono" style={{ fontSize: "clamp(26px, 3.6vw, 46px)", fontWeight: 500, color: ink, lineHeight: 1.06, letterSpacing: "-0.035em", margin: 0 }}>
+                      {s.heading}
+                    </h2>
+                    <p style={{ fontSize: isWide ? 15 : 14, lineHeight: 1.7, color: body, margin: 0, ...(isWide ? { alignSelf: "end", paddingBottom: 6 } : {}) }}>
+                      {s.sideNote}
+                    </p>
+                  </div>
+                ) : (
+                  <h2 className="font-mono" style={{ fontSize: "clamp(26px, 3.6vw, 46px)", fontWeight: 500, color: ink, lineHeight: 1.06, letterSpacing: "-0.035em", marginBottom: isOutsourced ? 20 : 32, maxWidth: 820 }}>
+                    {s.heading}
+                  </h2>
+                )}
+
+                {isOutsourced ? (
+                  <div style={{ borderRadius: 14, border: `1px solid ${outsourcedBorder}`, background: outsourcedBg, padding: isWide ? "28px 32px" : "20px 20px", maxWidth: 820 }}>
+                    <div className="font-mono" style={{ fontSize: 9, letterSpacing: "0.22em", color: accent, marginBottom: 18, textTransform: "uppercase", opacity: 0.72 }}>
+                      Agency work
+                    </div>
+                    <div style={{ display: "flex", flexDirection: "column", gap: 22 }}>
+                      {s.blocks.map((blk, i) => (
+                        <Block key={i} blk={blk} isLead={i === firstParagraphIdx} isMobile={!isWide}
+                          accent={accent} ink={ink} body={body} dim={dim} fade={fade} cardBg={cardBg} onImageOpen={openLightbox} />
+                      ))}
+                    </div>
+                    <p className="font-mono" style={{ fontSize: 10, letterSpacing: "0.06em", color: dim, marginTop: 20, opacity: 0.65 }}>
+                      Credits: Veronika Zamecnikova.
+                    </p>
+                  </div>
+                ) : blocksContent}
               </section>
             );
           })}
         </div>
       </div>
     </div>
+    </>
   );
 }
 
@@ -337,10 +520,11 @@ function Body({
    Block dispatcher
    ────────────────────────────────────────────────────────────── */
 function Block({
-  blk, isLead, isMobile, accent, ink, body, dim, fade, cardBg,
+  blk, isLead, isMobile, accent, ink, body, dim, fade, cardBg, onImageOpen,
 }: {
   blk: CaseBlock; isLead?: boolean; isMobile?: boolean;
   accent: string; ink: string; body: string; dim: string; fade: string; cardBg: string;
+  onImageOpen?: (src: string, alt?: string) => void;
 }) {
   switch (blk.type) {
     case "p":
@@ -359,62 +543,106 @@ function Block({
 
     case "image": {
       const aspect = blk.aspect ?? "16/9";
-      const aspectCss = aspect.replace("/", " / ");
       const [aw, ah] = aspect.split("/").map((s) => parseFloat(s.trim()) || 1);
-      const fullBleed = !!blk.fullBleed;
-
-      const frame = (
-        <div style={{ position: "relative", width: "100%", maxWidth: fullBleed ? `calc(90vh * ${aw} / ${ah})` : undefined, overflow: "hidden", aspectRatio: aspectCss, background: cardBg }}>
-          {/* eslint-disable-next-line @next/next/no-img-element */}
-          <img src={blk.src} alt={blk.alt ?? ""} style={{ position: "absolute", inset: 0, width: "100%", height: "100%", objectFit: "cover" }} />
-        </div>
-      );
+      const isFullBleed = !!blk.fullBleed;
+      const isWide = !!blk.wide;
+      const fit = blk.fit ?? "natural";
+      const isNatural = fit === "natural";
 
       const caption = blk.caption && (
-        <figcaption className="font-mono" style={{ fontSize: 11, letterSpacing: "0.04em", color: dim, marginTop: 10, lineHeight: 1.5, textAlign: fullBleed ? "center" : undefined }}>
+        <figcaption className="font-mono" style={{ fontSize: 11, letterSpacing: "0.04em", color: dim, marginTop: 10, lineHeight: 1.5, textAlign: isFullBleed ? "center" : undefined }}>
           {blk.caption}
         </figcaption>
       );
 
-      if (fullBleed && !isMobile) {
+      const imgEl = isNatural ? (
+        /* Natural: no fixed height — image shows at its full aspect ratio */
+        <div
+          style={{ overflow: "hidden", background: cardBg, borderRadius: 6, cursor: onImageOpen ? "pointer" : "default" }}
+          onClick={() => onImageOpen?.(blk.src, blk.alt)}
+        >
+          {/* eslint-disable-next-line @next/next/no-img-element */}
+          <img src={blk.src} alt={blk.alt ?? ""} style={{ width: "100%", height: "auto", display: "block" }} />
+        </div>
+      ) : (
+        /* Fixed aspect ratio */
+        <div
+          style={{ position: "relative", width: "100%", maxWidth: isFullBleed ? `calc(90vh * ${aw} / ${ah})` : undefined, overflow: "hidden", aspectRatio: aspect.replace("/", " / "), background: cardBg, cursor: onImageOpen ? "pointer" : "default" }}
+          onClick={() => onImageOpen?.(blk.src, blk.alt)}
+        >
+          {/* eslint-disable-next-line @next/next/no-img-element */}
+          <img src={blk.src} alt={blk.alt ?? ""} style={{ position: "absolute", inset: 0, width: "100%", height: "100%", objectFit: fit === "contain" ? "contain" : "cover", objectPosition: "top center" }} />
+        </div>
+      );
+
+      if (isFullBleed && !isMobile) {
         const bleedMarginLeft =
           "calc(-1 * max(0px, (100vw - var(--rw-sidebar) - var(--rw-body-max)) / 2) - var(--rw-body-pad) - var(--rw-toc-offset))";
         return (
           <figure style={{ margin: 0 }}>
             <div style={{ width: "calc(100vw - var(--rw-sidebar))", marginLeft: bleedMarginLeft, display: "flex", justifyContent: "center" }}>
-              {frame}
+              {imgEl}
             </div>
             {caption}
           </figure>
         );
       }
 
-      return <figure style={{ margin: 0 }}>{frame}{caption}</figure>;
+      if (isWide && !isMobile) {
+        return (
+          <figure style={{ margin: "0 -72px" }}>
+            {imgEl}
+            {caption}
+          </figure>
+        );
+      }
+
+      return <figure style={{ margin: 0 }}>{imgEl}{caption}</figure>;
     }
 
-    case "imagePair":
+    case "imagePair": {
+      const blockFit = blk.fit ?? "natural";
       return (
-        <div style={{ display: "grid", gridTemplateColumns: (isMobile && blk.items.length > 1) ? "1fr" : `repeat(${Math.max(1, blk.items.length)}, 1fr)`, gap: isMobile ? 20 : 14 }}>
-          {blk.items.map((it, i) => (
-            <figure key={i} style={{ margin: 0 }}>
-              <div style={{ position: "relative", overflow: "hidden", aspectRatio: isMobile ? "16 / 9" : "4 / 3", background: cardBg }}>
-                {/* eslint-disable-next-line @next/next/no-img-element */}
-                <img src={it.src} alt={it.alt ?? it.label ?? ""} style={{ position: "absolute", inset: 0, width: "100%", height: "100%", objectFit: "cover", objectPosition: "top center" }} />
-              </div>
-              {(it.label || it.caption) && (
-                <figcaption style={{ marginTop: 10 }}>
-                  {it.label && (
-                    <div className="font-mono" style={{ fontSize: 10, letterSpacing: "0.16em", color: accent, marginBottom: 4, textTransform: "uppercase" }}>
-                      {it.label}
-                    </div>
-                  )}
-                  {it.caption && <div style={{ fontSize: 13, color: dim, lineHeight: 1.5 }}>{it.caption}</div>}
-                </figcaption>
-              )}
-            </figure>
-          ))}
+        <div style={{ display: "grid", gridTemplateColumns: (isMobile && blk.items.length > 1) ? "1fr" : `repeat(${Math.max(1, blk.items.length)}, 1fr)`, gap: isMobile ? 20 : 14, alignItems: "start" }}>
+          {blk.items.map((it, i) => {
+            const fit = it.fit ?? blockFit;
+            const isNatural = fit === "natural";
+            const isContain = fit === "contain";
+            return (
+              <figure key={i} style={{ margin: 0 }}>
+                {isNatural ? (
+                  <div
+                    style={{ overflow: "hidden", borderRadius: 8, background: cardBg, cursor: onImageOpen ? "pointer" : "default" }}
+                    onClick={() => onImageOpen?.(it.src, it.alt ?? it.label)}
+                  >
+                    {/* eslint-disable-next-line @next/next/no-img-element */}
+                    <img src={it.src} alt={it.alt ?? it.label ?? ""} style={{ width: "100%", height: "auto", display: "block" }} />
+                  </div>
+                ) : (
+                  <div
+                    style={{ position: "relative", overflow: "hidden", aspectRatio: isMobile ? "16 / 9" : "4 / 3", background: cardBg, cursor: onImageOpen ? "pointer" : "default", borderRadius: 8 }}
+                    onClick={() => onImageOpen?.(it.src, it.alt ?? it.label)}
+                  >
+                    {/* eslint-disable-next-line @next/next/no-img-element */}
+                    <img src={it.src} alt={it.alt ?? it.label ?? ""} style={{ position: "absolute", inset: 0, width: "100%", height: "100%", objectFit: isContain ? "contain" : "cover", objectPosition: "top center" }} />
+                  </div>
+                )}
+                {(it.label || it.caption) && (
+                  <figcaption style={{ marginTop: 10 }}>
+                    {it.label && (
+                      <div className="font-mono" style={{ fontSize: 10, letterSpacing: "0.16em", color: accent, marginBottom: 4, textTransform: "uppercase" }}>
+                        {it.label}
+                      </div>
+                    )}
+                    {it.caption && <div style={{ fontSize: 13, color: dim, lineHeight: 1.5 }}>{it.caption}</div>}
+                  </figcaption>
+                )}
+              </figure>
+            );
+          })}
         </div>
       );
+    }
 
     case "objectives":
       return (
@@ -469,6 +697,35 @@ function Block({
         </blockquote>
       );
 
+    case "carousel":
+      return (
+        <Carousel
+          items={blk.items}
+          aspect={blk.aspect}
+          isMobile={isMobile}
+          cardBg={cardBg}
+          accent={accent}
+          dim={dim}
+          fade={fade}
+          onImageOpen={onImageOpen}
+        />
+      );
+
+    case "conceptTabs":
+      return (
+        <ConceptTabs
+          items={blk.items}
+          isMobile={isMobile}
+          cardBg={cardBg}
+          accent={accent}
+          ink={ink}
+          body={body}
+          dim={dim}
+          fade={fade}
+          onImageOpen={onImageOpen}
+        />
+      );
+
     case "metricCards":
       return (
         <div style={{ display: "grid", gridTemplateColumns: "repeat(2, 1fr)", gap: isMobile ? 12 : 20 }}>
@@ -495,7 +752,454 @@ function Block({
           ))}
         </div>
       );
+
+    case "phoneFlow":
+      return (
+        <PhoneFlow
+          heading={blk.heading}
+          description={blk.description}
+          mobileImage={blk.mobileImage}
+          mobileAlt={blk.mobileAlt}
+          items={blk.items}
+          isMobile={isMobile}
+          accent={accent}
+          ink={ink}
+          body={body}
+          dim={dim}
+          fade={fade}
+          cardBg={cardBg}
+          onImageOpen={onImageOpen}
+        />
+      );
+
+    case "painPoints": {
+      const hasShot = !!blk.screenshot;
+      const hasMobile = !!blk.screenshotMobile;
+      return (
+        <div style={{ display: "flex", flexDirection: "column", gap: 10 }}>
+
+          {/* ── Device mockup panel ── */}
+          {hasShot && (
+            <div style={{
+              background: "#0d0d0d",
+              borderRadius: 14,
+              padding: isMobile ? "22px 16px 26px" : "32px 40px 36px",
+              display: "flex",
+              alignItems: "flex-end",
+              justifyContent: "center",
+              gap: isMobile ? 10 : 22,
+              overflow: "hidden",
+            }}>
+
+              {/* Laptop */}
+              <div style={{ flex: "0 0 auto", width: hasMobile && !isMobile ? "66%" : (isMobile ? "88%" : "76%") }}>
+                {/* Lid */}
+                <div style={{
+                  background: "linear-gradient(180deg, #2c2c2c 0%, #222 100%)",
+                  borderRadius: "10px 10px 2px 2px",
+                  padding: "8px 8px 0",
+                  boxShadow: "0 0 0 1px rgba(255,255,255,0.07), inset 0 1px 0 rgba(255,255,255,0.07)",
+                }}>
+                  {/* Camera */}
+                  <div style={{ display: "flex", justifyContent: "center", marginBottom: 5 }}>
+                    <div style={{ width: 6, height: 6, borderRadius: "50%", background: "#2a2a2a", boxShadow: "inset 0 0 0 1.5px #3a3a3a" }} />
+                  </div>
+                  {/* Screen */}
+                  <div style={{ borderRadius: "2px 2px 0 0", overflow: "hidden", aspectRatio: "16/10", background: "#000" }}>
+                    {/* eslint-disable-next-line @next/next/no-img-element */}
+                    <img src={blk.screenshot} alt={blk.screenshotAlt ?? ""} style={{ width: "100%", height: "100%", objectFit: "cover", objectPosition: "top center", display: "block" }} />
+                  </div>
+                </div>
+                {/* Base */}
+                <div style={{
+                  height: 14,
+                  background: "linear-gradient(180deg, #282828 0%, #1c1c1c 100%)",
+                  borderRadius: "0 0 6px 6px",
+                  boxShadow: "0 6px 20px rgba(0,0,0,0.55), 0 0 0 1px rgba(255,255,255,0.04)",
+                }}>
+                  <div style={{ width: "28%", height: 5, background: "#252525", borderRadius: 2, margin: "4px auto 0" }} />
+                </div>
+              </div>
+
+              {/* Phone (optional, desktop only) */}
+              {hasMobile && !isMobile && (
+                <div style={{ flex: "0 0 auto", width: "20%", marginBottom: 14 }}>
+                  <div style={{
+                    background: "linear-gradient(180deg, #2c2c2c 0%, #222 100%)",
+                    borderRadius: 28,
+                    padding: "10px 6px",
+                    boxShadow: "0 0 0 1px rgba(255,255,255,0.07), 0 8px 28px rgba(0,0,0,0.5)",
+                  }}>
+                    <div style={{ width: 52, height: 10, background: "#0a0a0a", borderRadius: 7, margin: "0 auto 7px" }} />
+                    <div style={{ borderRadius: 18, overflow: "hidden", aspectRatio: "9/19.5", background: "#000" }}>
+                      {/* eslint-disable-next-line @next/next/no-img-element */}
+                      <img src={blk.screenshotMobile} alt={blk.screenshotAlt ?? ""} style={{ width: "100%", height: "100%", objectFit: "cover", objectPosition: "top center", display: "block" }} />
+                    </div>
+                  </div>
+                </div>
+              )}
+            </div>
+          )}
+
+          {/* ── Pain point rows ── */}
+          <div style={{ display: "flex", flexDirection: "column", gap: 6 }}>
+            {blk.items.map((item, i) => (
+              <div
+                key={i}
+                style={{
+                  display: "flex",
+                  alignItems: "center",
+                  gap: 14,
+                  padding: isMobile ? "13px 16px" : "15px 20px",
+                  background: "rgba(220, 38, 38, 0.09)",
+                  border: "1px solid rgba(220, 38, 38, 0.2)",
+                  borderRadius: 8,
+                }}
+              >
+                <X size={14} strokeWidth={2.5} style={{ color: "rgb(239, 68, 68)", flexShrink: 0 }} />
+                <span style={{ fontSize: isMobile ? 14 : 15, lineHeight: 1.5, color: ink }}>{item}</span>
+              </div>
+            ))}
+          </div>
+        </div>
+      );
+    }
   }
+}
+
+/* ──────────────────────────────────────────────────────────────
+   Phone Flow — horizontal scroll of booking steps
+   ────────────────────────────────────────────────────────────── */
+function PhoneFlow({
+  heading, description, mobileImage, mobileAlt, items, isMobile, accent, ink, body: bodyColor, dim, fade, cardBg, onImageOpen,
+}: {
+  heading?: string;
+  description?: string;
+  mobileImage?: string;
+  mobileAlt?: string;
+  items: { label: string; description?: string; src: string; alt?: string }[];
+  isMobile?: boolean;
+  accent: string; ink: string; body: string; dim: string; fade: string; cardBg: string;
+  onImageOpen?: (src: string, alt?: string) => void;
+}) {
+  /* Mobile: skip the full white card / carousel and show a single composed
+     image that already includes the heading, description and every phone. */
+  if (isMobile && mobileImage) {
+    return (
+      <div
+        style={{
+          marginTop: 16,
+          marginBottom: 16,
+          borderRadius: 12,
+          overflow: "hidden",
+          cursor: onImageOpen ? "zoom-in" : "default",
+        }}
+        onClick={() => onImageOpen?.(mobileImage, mobileAlt ?? heading ?? "")}
+      >
+        {/* eslint-disable-next-line @next/next/no-img-element */}
+        <img
+          src={mobileImage}
+          alt={mobileAlt ?? heading ?? ""}
+          style={{ width: "100%", height: "auto", display: "block" }}
+        />
+      </div>
+    );
+  }
+
+  const scrollRef = useRef<HTMLDivElement>(null);
+  const GAP = isMobile ? 14 : 24;
+
+  /* Each phone fills exactly 1/5 of the visible scroll area (with 4 gaps), so
+     5 graphics are visible at once — bigger and easier to inspect. The
+     remaining phones live to the right and scroll into view via the arrows. */
+  const VISIBLE_COUNT = 5;
+  const cardSlot = isMobile
+    ? "172px"
+    : `calc((100% - ${(VISIBLE_COUNT - 1) * GAP}px) / ${VISIBLE_COUNT})`;
+
+  const scrollBy = (dir: 1 | -1) => {
+    if (!scrollRef.current) return;
+    const firstCard = scrollRef.current.querySelector<HTMLElement>("[data-phone-card]");
+    const w = firstCard ? firstCard.offsetWidth + GAP : 240;
+    scrollRef.current.scrollBy({ left: dir * w * 2, behavior: "smooth" });
+  };
+
+  /* Subtle border tone for the white card — kept independent of theme since
+     the card itself is always white. */
+  const cardFade = "rgba(10, 12, 35, 0.10)";
+
+  /* Viewport-centered card sizing.
+     - Capped at 1770px wide so it extends close to the viewport edges on big
+       displays while still keeping 48px breathing room each side.
+     - Phones inside auto-scale via the flex slot calc, so a wider card means
+       proportionally bigger phones. */
+  const VIEWPORT_MARGIN = 48;
+  const MAX_W = 1770;
+  const COLUMN_OFFSET = 292; // 220 TOC + 72 gap
+  const cardWidth = `min(${MAX_W}px, calc(100vw - ${VIEWPORT_MARGIN * 2}px))`;
+  const cardMarginLeft = `calc((100vw - ${cardWidth}) / 2 - max((100vw - 1240px) / 2, 0px) - var(--rw-body-pad) - ${COLUMN_OFFSET}px)`;
+
+  return (
+    <div
+      data-fullbleed-card
+      style={{
+        position: "relative",
+        marginTop: isMobile ? 16 : 32,
+        marginBottom: isMobile ? 16 : 32,
+        width: isMobile ? "100%" : cardWidth,
+        marginLeft: isMobile ? 0 : cardMarginLeft,
+        background: "#ffffff",
+        border: `1px solid ${cardFade}`,
+        borderRadius: 20,
+        padding: isMobile ? "36px 24px 32px" : "96px 104px 88px",
+        boxShadow: "0 10px 40px rgba(0, 0, 0, 0.10)",
+        overflow: "hidden",
+        zIndex: 1,
+      }}
+    >
+      {/* (Header is intentionally omitted on desktop — the "Booking Flow"
+          heading and description live in the surrounding section copy, and
+          the phone images themselves are self-describing.) */}
+
+      {/* Scroll track — phone images only (labels/descriptions are baked into the images). */}
+      <div
+        ref={scrollRef}
+        className="rw-scroller"
+        style={{
+          display: "flex",
+          gap: GAP,
+          overflowX: "auto",
+          scrollSnapType: "x mandatory",
+          paddingBottom: 4,
+          alignItems: "flex-start",
+        } as React.CSSProperties}
+      >
+        {items.map((item, i) => (
+          <div
+            key={i}
+            data-phone-card
+            style={{
+              flex: `0 0 ${cardSlot}`,
+              scrollSnapAlign: "start",
+              cursor: onImageOpen ? "zoom-in" : "default",
+              display: "flex",
+              justifyContent: "center",
+            }}
+            onClick={() => onImageOpen?.(item.src, item.alt ?? item.label)}
+          >
+            {/* eslint-disable-next-line @next/next/no-img-element */}
+            <img
+              src={item.src}
+              alt={item.alt ?? item.label}
+              draggable={false}
+              style={{ maxWidth: "100%", height: "auto", display: "block" }}
+            />
+          </div>
+        ))}
+      </div>
+
+      {/* Prev / Next buttons — vertically centered on the phone images */}
+      {!isMobile && (
+        <>
+          <button
+            onClick={() => scrollBy(-1)}
+            aria-label="Scroll left"
+            style={{ position: "absolute", left: 16, top: "62%", transform: "translateY(-50%)", background: "rgba(10,12,35,0.78)", border: "1px solid rgba(255,255,255,0.10)", borderRadius: "50%", width: 40, height: 40, cursor: "pointer", display: "flex", alignItems: "center", justifyContent: "center", color: "#ffffff", zIndex: 3, boxShadow: "0 4px 18px rgba(0,0,0,0.18)", backdropFilter: "blur(6px)" }}
+          >
+            <ArrowLeft size={15} strokeWidth={2} />
+          </button>
+          <button
+            onClick={() => scrollBy(1)}
+            aria-label="Scroll right"
+            style={{ position: "absolute", right: 16, top: "62%", transform: "translateY(-50%)", background: "rgba(10,12,35,0.78)", border: "1px solid rgba(255,255,255,0.10)", borderRadius: "50%", width: 40, height: 40, cursor: "pointer", display: "flex", alignItems: "center", justifyContent: "center", color: "#ffffff", zIndex: 3, boxShadow: "0 4px 18px rgba(0,0,0,0.18)", backdropFilter: "blur(6px)" }}
+          >
+            <ArrowRight size={15} strokeWidth={2} />
+          </button>
+        </>
+      )}
+    </div>
+  );
+}
+
+/* ──────────────────────────────────────────────────────────────
+   Lightbox
+   ────────────────────────────────────────────────────────────── */
+function LightboxOverlay({ src, alt, onClose }: { src: string; alt: string; onClose: () => void }) {
+  useEffect(() => {
+    const onKey = (e: KeyboardEvent) => { if (e.key === "Escape") onClose(); };
+    document.addEventListener("keydown", onKey);
+    return () => document.removeEventListener("keydown", onKey);
+  }, [onClose]);
+
+  return (
+    <div
+      onClick={onClose}
+      style={{ position: "fixed", inset: 0, zIndex: 9999, background: "rgba(0,0,0,0.90)", display: "flex", alignItems: "center", justifyContent: "center", padding: "5vh 5vw", backdropFilter: "blur(10px)" }}
+    >
+      <div onClick={(e) => e.stopPropagation()} style={{ position: "relative", maxWidth: "90vw", maxHeight: "90vh" }}>
+        <button
+          onClick={onClose}
+          aria-label="Close"
+          style={{ position: "absolute", top: -14, right: -14, zIndex: 1, background: "rgba(30,30,30,0.9)", border: "1px solid rgba(255,255,255,0.12)", borderRadius: "50%", width: 32, height: 32, cursor: "pointer", display: "flex", alignItems: "center", justifyContent: "center", color: "rgba(255,255,255,0.85)" }}
+        >
+          <X size={14} strokeWidth={2.5} />
+        </button>
+        {/* eslint-disable-next-line @next/next/no-img-element */}
+        <img src={src} alt={alt} style={{ display: "block", maxWidth: "90vw", maxHeight: "90vh", width: "auto", height: "auto", borderRadius: 10, objectFit: "contain" }} />
+      </div>
+    </div>
+  );
+}
+
+/* ──────────────────────────────────────────────────────────────
+   Concept Tabs
+   ────────────────────────────────────────────────────────────── */
+function ConceptTabs({
+  items, isMobile, cardBg, accent, ink, body: bodyColor, dim, fade, onImageOpen,
+}: {
+  items: { label: string; tabLabel?: string; description?: string; src: string; alt?: string }[];
+  isMobile?: boolean;
+  cardBg: string; accent: string; ink: string; body: string; dim: string; fade: string;
+  onImageOpen?: (src: string, alt?: string) => void;
+}) {
+  const [activeIdx, setActiveIdx] = useState(0);
+  const active = items[activeIdx];
+
+  return (
+    <div style={{ display: "flex", flexDirection: "column", gap: 16 }}>
+      {/* Concept rows */}
+      <div style={{ display: "flex", flexDirection: "column" }}>
+        {items.map((item, i) => {
+          const isActive = i === activeIdx;
+          return (
+            <button
+              key={i}
+              onClick={() => setActiveIdx(i)}
+              style={{ display: "flex", alignItems: "flex-start", gap: 14, padding: "14px 0", borderTop: `1px solid ${fade}`, borderBottom: "none", borderLeft: "none", borderRight: "none", background: "none", cursor: "pointer", textAlign: "left", width: "100%" }}
+            >
+              <div style={{ width: 26, height: 26, borderRadius: "50%", background: isActive ? `${accent}20` : cardBg, border: `1.5px solid ${isActive ? accent : fade}`, display: "flex", alignItems: "center", justifyContent: "center", flexShrink: 0, marginTop: 3, transition: "all 0.18s ease" }}>
+                <span className="font-mono" style={{ fontSize: 9, color: isActive ? accent : dim }}>{String(i + 1).padStart(2, "0")}</span>
+              </div>
+              <div style={{ flex: 1, minWidth: 0 }}>
+                <div style={{ fontSize: isMobile ? 14 : 15, fontWeight: 500, color: isActive ? ink : dim, marginBottom: item.description ? 4 : 0, lineHeight: 1.3, transition: "color 0.18s ease" }}>
+                  {item.label}
+                </div>
+                {item.description && (
+                  <div style={{ fontSize: 13, color: dim, lineHeight: 1.55 }}>{item.description}</div>
+                )}
+              </div>
+            </button>
+          );
+        })}
+        <div style={{ height: 1, background: fade }} />
+      </div>
+
+      {/* Image card */}
+      <div style={{ background: cardBg, border: `1px solid ${fade}`, borderRadius: 12, overflow: "hidden" }}>
+        {/* Tab bar */}
+        <div style={{ display: "flex", padding: "10px 12px", gap: 4, borderBottom: `1px solid ${fade}` }}>
+          {items.map((item, i) => (
+            <button
+              key={i}
+              onClick={() => setActiveIdx(i)}
+              className="font-mono"
+              style={{ padding: "5px 12px", borderRadius: 6, border: "none", background: i === activeIdx ? `${accent}18` : "transparent", color: i === activeIdx ? accent : dim, fontSize: 9, letterSpacing: "0.14em", textTransform: "uppercase", cursor: "pointer", transition: "all 0.18s ease" }}
+            >
+              {item.tabLabel ?? `Concept ${i + 1}`}
+            </button>
+          ))}
+        </div>
+
+        {/* Full image — no crop */}
+        <div
+          style={{ padding: isMobile ? "10px" : "14px", cursor: onImageOpen ? "pointer" : "default" }}
+          onClick={() => onImageOpen?.(active.src, active.alt)}
+        >
+          {/* eslint-disable-next-line @next/next/no-img-element */}
+          <img src={active.src} alt={active.alt ?? ""} style={{ width: "100%", height: "auto", display: "block", borderRadius: 6 }} />
+        </div>
+      </div>
+    </div>
+  );
+}
+
+/* ──────────────────────────────────────────────────────────────
+   Carousel
+   ────────────────────────────────────────────────────────────── */
+function Carousel({
+  items, aspect, isMobile, cardBg, accent, dim, fade, onImageOpen,
+}: {
+  items: { src: string; alt?: string; caption?: string; label?: string }[];
+  aspect?: string;
+  isMobile?: boolean;
+  cardBg: string; accent: string; dim: string; fade: string;
+  onImageOpen?: (src: string, alt?: string) => void;
+}) {
+  const [idx, setIdx] = useState(0);
+  const prev = () => setIdx((i) => (i - 1 + items.length) % items.length);
+  const next = () => setIdx((i) => (i + 1) % items.length);
+  const item = items[idx];
+  const aspectCss = (aspect ?? "3/2").replace("/", " / ");
+
+  return (
+    <figure style={{ margin: 0 }}>
+      <div style={{ position: "relative", overflow: "hidden", aspectRatio: aspectCss, background: cardBg, borderRadius: 8 }}>
+        {/* eslint-disable-next-line @next/next/no-img-element */}
+        <img
+          src={item.src}
+          alt={item.alt ?? ""}
+          onClick={() => onImageOpen?.(item.src, item.alt)}
+          style={{ position: "absolute", inset: 0, width: "100%", height: "100%", objectFit: "contain", objectPosition: "center", cursor: onImageOpen ? "pointer" : "default" }}
+        />
+
+        {items.length > 1 && (
+          <>
+            <button
+              onClick={(e) => { e.stopPropagation(); prev(); }}
+              aria-label="Previous image"
+              style={{ position: "absolute", left: 10, top: "50%", transform: "translateY(-50%)", background: "rgba(0,0,0,0.52)", border: "none", borderRadius: "50%", width: 34, height: 34, cursor: "pointer", display: "flex", alignItems: "center", justifyContent: "center", color: "rgba(255,255,255,0.9)", backdropFilter: "blur(6px)", zIndex: 1 }}
+            >
+              <ArrowLeft size={15} strokeWidth={2} />
+            </button>
+            <button
+              onClick={(e) => { e.stopPropagation(); next(); }}
+              aria-label="Next image"
+              style={{ position: "absolute", right: 10, top: "50%", transform: "translateY(-50%)", background: "rgba(0,0,0,0.52)", border: "none", borderRadius: "50%", width: 34, height: 34, cursor: "pointer", display: "flex", alignItems: "center", justifyContent: "center", color: "rgba(255,255,255,0.9)", backdropFilter: "blur(6px)", zIndex: 1 }}
+            >
+              <ArrowRight size={15} strokeWidth={2} />
+            </button>
+
+            {/* Counter badge */}
+            <div onClick={(e) => e.stopPropagation()} style={{ position: "absolute", bottom: 10, right: 10, background: "rgba(0,0,0,0.55)", borderRadius: 999, padding: "3px 9px", backdropFilter: "blur(6px)", zIndex: 1 }}>
+              <span className="font-mono" style={{ fontSize: 9, color: "rgba(255,255,255,0.75)", letterSpacing: "0.12em" }}>
+                {idx + 1} / {items.length}
+              </span>
+            </div>
+          </>
+        )}
+      </div>
+
+      {/* Dot nav */}
+      {items.length > 1 && (
+        <div style={{ display: "flex", justifyContent: "center", gap: 5, marginTop: 10 }}>
+          {items.map((_, i) => (
+            <button
+              key={i}
+              onClick={(e) => { e.stopPropagation(); setIdx(i); }}
+              aria-label={`Go to image ${i + 1}`}
+              style={{ width: i === idx ? 18 : 6, height: 6, borderRadius: 999, background: i === idx ? accent : fade, border: "none", cursor: "pointer", padding: 0, transition: "width 0.2s ease, background 0.2s ease" }}
+            />
+          ))}
+        </div>
+      )}
+
+      {item.caption && (
+        <figcaption className="font-mono" style={{ fontSize: 11, letterSpacing: "0.04em", color: dim, marginTop: 8, lineHeight: 1.5, textAlign: "center" }}>
+          {item.caption}
+        </figcaption>
+      )}
+    </figure>
+  );
 }
 
 /* ──────────────────────────────────────────────────────────────
@@ -530,6 +1234,87 @@ function FallbackBody({
         </section>
       )}
     </article>
+  );
+}
+
+/* ──────────────────────────────────────────────────────────────
+   Conclusion
+   ────────────────────────────────────────────────────────────── */
+function Conclusion({
+  conclusion, ink, body, dim, fade, accent, isDark,
+}: {
+  conclusion: { quote: string; body?: string; signoff?: string };
+  ink: string; body: string; dim: string; fade: string; accent: string; isDark: boolean;
+}) {
+  const [isMobile, setIsMobile] = useState(false);
+  useEffect(() => {
+    const update = () => setIsMobile(window.innerWidth < 768);
+    update();
+    window.addEventListener("resize", update);
+    return () => window.removeEventListener("resize", update);
+  }, []);
+
+  const scrollTop = () => window.scrollTo({ top: 0, behavior: "smooth" });
+
+  return (
+    <section style={{
+      paddingTop: isMobile ? 48 : 72,
+      paddingBottom: isMobile ? 48 : 64,
+      borderTop: `1px solid ${fade}`,
+      display: "grid",
+      gridTemplateColumns: isMobile ? "1fr" : "200px 1fr",
+      gap: isMobile ? 32 : 56,
+      alignItems: "start",
+    }}>
+      {/* Left: avatar + name + back to top */}
+      <div style={{ display: "flex", flexDirection: isMobile ? "row" : "column", alignItems: isMobile ? "center" : "flex-start", gap: isMobile ? 14 : 20 }}>
+        <div style={{ display: "flex", alignItems: "center", gap: 12, flex: isMobile ? 1 : undefined }}>
+          <div style={{ width: 48, height: 48, borderRadius: "50%", overflow: "hidden", flexShrink: 0, background: fade }}>
+            {/* eslint-disable-next-line @next/next/no-img-element */}
+            <img
+              src={isDark ? "/profile.png" : "/profile-light.png"}
+              alt="Rodrigo Martínez"
+              style={{ width: "100%", height: "100%", objectFit: "cover" }}
+            />
+          </div>
+          <div>
+            <div style={{ fontSize: 14, fontWeight: 500, color: ink, letterSpacing: "-0.01em" }}>Rodrigo Martínez</div>
+            <div className="font-mono" style={{ fontSize: 11, color: dim, letterSpacing: "0.04em" }}>UX Designer</div>
+          </div>
+        </div>
+        <button
+          onClick={scrollTop}
+          style={{ display: "inline-flex", alignItems: "center", gap: 6, background: "none", border: "none", cursor: "pointer", color: accent, fontSize: 13, padding: 0, letterSpacing: "-0.01em" }}
+        >
+          <ArrowUp size={13} strokeWidth={2} />
+          Back to the top
+        </button>
+      </div>
+
+      {/* Right: quote + body + signoff */}
+      <div>
+        <p style={{
+          fontSize: isMobile ? "clamp(20px, 5vw, 28px)" : "clamp(22px, 2.6vw, 38px)",
+          fontWeight: 700,
+          color: ink,
+          lineHeight: 1.18,
+          letterSpacing: "-0.025em",
+          marginBottom: 20,
+        }}>
+          {conclusion.quote}
+        </p>
+        {conclusion.body && (
+          <p style={{ fontSize: isMobile ? 14 : 15, color: body, lineHeight: 1.65, marginBottom: 10 }}>
+            {conclusion.body}
+          </p>
+        )}
+        {conclusion.signoff && (
+          <p style={{ fontSize: isMobile ? 14 : 15, color: dim }}>
+            {conclusion.signoff}
+          </p>
+        )}
+      </div>
+    </section>
   );
 }
 

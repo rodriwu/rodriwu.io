@@ -1,15 +1,21 @@
 "use client";
 
+import Link from "next/link";
 import { useEffect, useRef, useState } from "react";
 import { motion, useMotionValue, useTransform } from "framer-motion";
+import { ArrowUpRight } from "lucide-react";
 import { CASE_STUDIES } from "@/data/caseStudies";
 import { useShell } from "./context/ShellContext";
 import CaseCard from "./panels/CaseStudyPanel";
 
 const T = {
-  en: { label: "SELECTED.work", footer: "scroll · or drag the bar", skipToContact: "Skip to contact ↓" },
-  es: { label: "TRABAJO.seleccionado", footer: "scroll · o arrastra la barra", skipToContact: "Ir al contacto ↓" },
+  en: { label: "SELECTED.work", footer: "scroll · or drag the bar", skipToContact: "Skip to contact ↓", viewAll: "View all work", viewAllSub: "Full case study index" },
+  es: { label: "TRABAJO.seleccionado", footer: "scroll · o arrastra la barra", skipToContact: "Ir al contacto ↓", viewAll: "Ver todo", viewAllSub: "Índice completo de casos" },
 };
+
+/* Cases visible on the home gallery. Any case with `homeGallery: false` is
+   hidden here and only reachable via the /work page index. */
+const HOME_CASES = CASE_STUDIES.filter((c) => c.homeGallery !== false);
 
 /* Pinned horizontal-scroll gallery on desktop; 2-col grid on mobile. */
 export default function Gallery() {
@@ -46,7 +52,8 @@ function DesktopStrip({ isDark, t }: { isDark: boolean; t: typeof T["en"] }) {
   const [scrubbing, setScrubbing] = useState(false);
   const [pinned, setPinned] = useState(false);
 
-  const totalCards = CASE_STUDIES.length;
+  /* +1 because the strip ends with a "View all work" CTA tile. */
+  const totalCards = HOME_CASES.length + 1;
   const pad = (n: number) => String(n).padStart(2, "0");
 
   const dim  = isDark ? "rgba(255,255,255,0.42)" : "rgba(10,12,35,0.45)";
@@ -174,7 +181,9 @@ function DesktopStrip({ isDark, t }: { isDark: boolean; t: typeof T["en"] }) {
             {t.skipToContact}
           </a>
           <span style={{ color: ink }}>
-            {CASE_STUDIES[activeIdx]?.shortTitle?.toUpperCase()}
+            {activeIdx < HOME_CASES.length
+              ? HOME_CASES[activeIdx]?.shortTitle?.toUpperCase()
+              : t.viewAll.toUpperCase()}
           </span>
         </motion.div>
 
@@ -200,7 +209,7 @@ function DesktopStrip({ isDark, t }: { isDark: boolean; t: typeof T["en"] }) {
               willChange: "transform",
             }}
           >
-            {CASE_STUDIES.map((cs) => (
+            {HOME_CASES.map((cs) => (
               <div
                 key={cs.id}
                 style={{
@@ -211,6 +220,18 @@ function DesktopStrip({ isDark, t }: { isDark: boolean; t: typeof T["en"] }) {
                 <CaseCard cs={cs} />
               </div>
             ))}
+            <div
+              key="__cta"
+              style={{
+                flexShrink: 0,
+                /* Match the height of regular case cards (which are square at min(72vh, 56vw))
+                   but keep a thinner width so it reads as an index entry, not another case. */
+                width: "min(32vh, 22vw)",
+                height: "min(72vh, 56vw)",
+              }}
+            >
+              <WorkCtaCard isDark={isDark} label={t.viewAll} sub={t.viewAllSub} />
+            </div>
           </motion.div>
         </div>
 
@@ -477,7 +498,7 @@ function MobileGrid({ isDark, t }: { isDark: boolean; t: typeof T["en"] }) {
           width: "100%",
         }}
       >
-        {CASE_STUDIES.map((cs) => (
+        {HOME_CASES.map((cs) => (
           <div key={cs.id} style={{ display: "flex", flexDirection: "column", gap: 10 }}>
             <CaseCard cs={cs} />
             <span
@@ -488,7 +509,108 @@ function MobileGrid({ isDark, t }: { isDark: boolean; t: typeof T["en"] }) {
             </span>
           </div>
         ))}
+        <div key="__cta" style={{ display: "flex", flexDirection: "column", gap: 10 }}>
+          <div style={{ width: "100%", aspectRatio: "1 / 1" }}>
+            <WorkCtaCard isDark={isDark} label={t.viewAll} sub={t.viewAllSub} />
+          </div>
+          <span
+            className="font-mono"
+            style={{ fontSize: 11, letterSpacing: "0.06em", color: dim, lineHeight: 1.3 }}
+          >
+            {t.viewAll}
+          </span>
+        </div>
       </div>
     </section>
+  );
+}
+
+/* ──────────────────────────────────────────────────────────────
+   CTA tile — sits at the end of the gallery and links to /work
+   ────────────────────────────────────────────────────────────── */
+function WorkCtaCard({ isDark, label, sub }: { isDark: boolean; label: string; sub: string }) {
+  const bg     = isDark ? "rgba(255,255,255,0.04)" : "rgba(10,12,35,0.04)";
+  const border = isDark ? "rgba(255,255,255,0.14)" : "rgba(10,12,35,0.16)";
+  const ink    = isDark ? "rgba(255,255,255,0.92)" : "rgba(10,12,35,0.92)";
+  const dim    = isDark ? "rgba(255,255,255,0.55)" : "rgba(10,12,35,0.55)";
+  const accent = isDark ? "#CFF24A" : "#7B5CF6";
+
+  return (
+    <motion.div
+      initial={{ opacity: 0, y: 8 }}
+      whileInView={{ opacity: 1, y: 0 }}
+      viewport={{ once: true, margin: "0px -5% 0px -5%" }}
+      transition={{ duration: 0.55, ease: [0.16, 1, 0.3, 1] }}
+      style={{ position: "relative", width: "100%", height: "100%" }}
+    >
+      <Link
+        href="/work"
+        aria-label={`${label} — full case study index`}
+        className="rw-thumb"
+        draggable={false}
+        style={{
+          display: "flex",
+          flexDirection: "column",
+          justifyContent: "space-between",
+          alignItems: "stretch",
+          width: "100%",
+          height: "100%",
+          padding: "clamp(18px, 2.4vw, 28px)",
+          background: bg,
+          border: `1px dashed ${border}`,
+          borderRadius: 10,
+          textDecoration: "none",
+          color: ink,
+          transition: "background 0.22s ease, border-color 0.22s ease",
+        }}
+      >
+        <span
+          className="font-mono"
+          style={{ fontSize: 10, letterSpacing: "0.22em", color: dim, textTransform: "uppercase" }}
+        >
+          Index
+        </span>
+
+        <div style={{ display: "flex", flexDirection: "column", gap: 10 }}>
+          <span
+            style={{
+              fontSize: "clamp(22px, 2.4vw, 32px)",
+              fontWeight: 500,
+              letterSpacing: "-0.03em",
+              lineHeight: 1.05,
+              color: ink,
+            }}
+          >
+            {label}
+          </span>
+          <span
+            className="font-mono"
+            style={{ fontSize: 11, letterSpacing: "0.06em", color: dim, lineHeight: 1.4 }}
+          >
+            {sub}
+          </span>
+        </div>
+
+        <div
+          style={{
+            display: "inline-flex",
+            alignItems: "center",
+            gap: 8,
+            alignSelf: "flex-start",
+            padding: "9px 14px",
+            border: `1px solid ${accent}`,
+            borderRadius: 999,
+            background: `${accent}18`,
+            color: accent,
+            fontFamily: "inherit",
+            fontSize: 11,
+            letterSpacing: "0.06em",
+            textTransform: "uppercase",
+          }}
+        >
+          See the list <ArrowUpRight size={13} strokeWidth={2} />
+        </div>
+      </Link>
+    </motion.div>
   );
 }

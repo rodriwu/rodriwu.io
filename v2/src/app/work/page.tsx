@@ -3,11 +3,22 @@
 import Link from "next/link";
 import { motion } from "framer-motion";
 import { ArrowLeft, ArrowUpRight } from "lucide-react";
-import { CASE_STUDIES } from "@/data/caseStudies";
+import { CASE_STUDIES, type CaseStudy } from "@/data/caseStudies";
 import { useShell } from "@/components/context/ShellContext";
 
+/* Sort key: extract [endYear, startYear] from a `year` string ("2024 to 2025",
+   "2023 – 2024", "2025"). Used for newest-first sorting with a start-year
+   tiebreaker so a 2025-only project ranks above a 2024-2025 project. */
+function yearKey(s: string): [number, number] {
+  const m = s.match(/\d{4}/g);
+  if (!m || m.length === 0) return [0, 0];
+  const start = parseInt(m[0], 10);
+  const end = parseInt(m[m.length - 1], 10);
+  return [end, start];
+}
+
 export default function WorkPage() {
-  const { isDark } = useShell();
+  const { isDark, openUnavailable } = useShell();
 
   const accent = isDark ? "#CFF24A" : "#7B5CF6";
   const ink    = isDark ? "rgba(255,255,255,0.94)" : "rgba(10,12,35,0.92)";
@@ -16,6 +27,11 @@ export default function WorkPage() {
   const fade   = isDark ? "rgba(255,255,255,0.10)" : "rgba(10,12,35,0.12)";
 
   const pad = (n: number) => String(n).padStart(2, "0");
+  const sorted: CaseStudy[] = [...CASE_STUDIES].sort((a, b) => {
+    const [aEnd, aStart] = yearKey(a.year);
+    const [bEnd, bStart] = yearKey(b.year);
+    return bEnd - aEnd || bStart - aStart;
+  });
 
   return (
     <div style={{ width: "100%" }}>
@@ -31,14 +47,14 @@ export default function WorkPage() {
             BACK
           </Link>
           <span className="font-mono" style={{ fontSize: 10, letterSpacing: "0.16em", color: dim }}>
-            INDEX · {pad(CASE_STUDIES.length)} CASES
+            INDEX · {pad(CASE_STUDIES.length)} PROJECTS
           </span>
         </div>
 
         {/* Page heading */}
         <header style={{ marginBottom: 64 }}>
           <p className="font-mono" style={{ fontSize: 10, letterSpacing: "0.22em", color: dim, marginBottom: 14, textTransform: "uppercase" }}>
-            All work
+            Selected work
           </p>
           <h1
             className="font-mono"
@@ -52,39 +68,30 @@ export default function WorkPage() {
               maxWidth: 920,
             }}
           >
-            Every case study, end to end.
+            All the work.
           </h1>
           <p style={{ fontSize: 17, lineHeight: 1.66, color: body, maxWidth: 720 }}>
-            The complete index — including older work and projects not featured on the home page. Each case study links to the full write-up.
+            A collection of projects: brand identity, product design, UX, digital platforms. Not all are formal write-ups; some just show the output.
           </p>
         </header>
 
         {/* List */}
         <ul style={{ listStyle: "none", padding: 0, margin: 0, borderTop: `1px solid ${fade}` }}>
-          {CASE_STUDIES.map((cs, i) => (
-            <motion.li
-              key={cs.id}
-              initial={{ opacity: 0, y: 8 }}
-              whileInView={{ opacity: 1, y: 0 }}
-              viewport={{ once: true, margin: "0px -8% 0px -8%" }}
-              transition={{ duration: 0.45, ease: [0.16, 1, 0.3, 1], delay: Math.min(i * 0.03, 0.18) }}
-              style={{ borderBottom: `1px solid ${fade}` }}
-            >
-              <Link
-                href={`/case/${cs.id}`}
-                className="work-row"
-                style={{
-                  display: "grid",
-                  gridTemplateColumns: "60px 96px 1fr auto",
-                  alignItems: "center",
-                  gap: "clamp(14px, 2.4vw, 28px)",
-                  padding: "20px 8px",
-                  textDecoration: "none",
-                  color: ink,
-                  borderRadius: 6,
-                  transition: "background 0.22s ease, padding 0.22s ease",
-                }}
-              >
+          {sorted.map((cs, i) => {
+            const rowStyle = {
+              display: "grid",
+              gridTemplateColumns: "60px 96px 1fr auto",
+              alignItems: "center",
+              gap: "clamp(14px, 2.4vw, 28px)",
+              padding: "20px 8px",
+              textDecoration: "none",
+              color: ink,
+              borderRadius: 6,
+              transition: "background 0.22s ease, padding 0.22s ease",
+            } as const;
+
+            const rowInner = (
+              <>
                 {/* Index number */}
                 <span
                   className="font-mono"
@@ -126,7 +133,7 @@ export default function WorkPage() {
                       whiteSpace: "nowrap",
                     }}
                   >
-                    {cs.shortTitle} — {cs.tagline}
+                    {cs.shortTitle} · {cs.tagline}
                   </span>
                   <span
                     className="font-mono"
@@ -152,9 +159,51 @@ export default function WorkPage() {
                 >
                   <ArrowUpRight size={16} strokeWidth={1.8} />
                 </span>
-              </Link>
-            </motion.li>
-          ))}
+              </>
+            );
+
+            return (
+              <motion.li
+                key={cs.id}
+                initial={{ opacity: 0, y: 8 }}
+                whileInView={{ opacity: 1, y: 0 }}
+                viewport={{ once: true, margin: "0px -8% 0px -8%" }}
+                transition={{ duration: 0.45, ease: [0.16, 1, 0.3, 1], delay: Math.min(i * 0.03, 0.18) }}
+                style={{ borderBottom: `1px solid ${fade}` }}
+              >
+                {cs.unavailable ? (
+                  <button
+                    type="button"
+                    onClick={() => openUnavailable(cs.shortTitle)}
+                    aria-label={`${cs.shortTitle} (unavailable)`}
+                    className="work-row"
+                    style={{ ...rowStyle, background: "transparent", border: "none", width: "100%", font: "inherit", cursor: "pointer", textAlign: "left" }}
+                  >
+                    {rowInner}
+                  </button>
+                ) : cs.external ? (
+                  <a
+                    href={cs.url}
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    aria-label={`${cs.shortTitle} (opens in new tab)`}
+                    className="work-row"
+                    style={rowStyle}
+                  >
+                    {rowInner}
+                  </a>
+                ) : (
+                  <Link
+                    href={`/case/${cs.id}`}
+                    className="work-row"
+                    style={rowStyle}
+                  >
+                    {rowInner}
+                  </Link>
+                )}
+              </motion.li>
+            );
+          })}
         </ul>
 
         {/* Footer note */}
@@ -168,7 +217,7 @@ export default function WorkPage() {
             lineHeight: 1.6,
           }}
         >
-          Some of these cases are also linked from Behance and Dribbble — the write-ups here include the full context, decisions, and outcomes.
+          Some of these projects are also documented on Behance and Dribbble.
         </p>
       </article>
 

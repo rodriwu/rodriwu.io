@@ -27,6 +27,10 @@ interface ShellState {
   openTerminal: () => void;
   closeTerminal: () => void;
   toggleTerminal: () => void;
+
+  unavailableCase: string | null;
+  openUnavailable: (name: string) => void;
+  closeUnavailable: () => void;
 }
 
 const ShellCtx = createContext<ShellState | null>(null);
@@ -41,6 +45,7 @@ export function ShellProvider({ children }: { children: React.ReactNode }) {
   const [isDark, setIsDark] = useState(true);
   const [locale, setLocale] = useState<Locale>("en");
   const [terminalOpen, setTerminalOpen] = useState(false);
+  const [unavailableCase, setUnavailableCase] = useState<string | null>(null);
 
   const audioRef = useRef<HTMLAudioElement | null>(null);
   const [isPlaying, setIsPlaying] = useState(false);
@@ -150,7 +155,10 @@ export function ShellProvider({ children }: { children: React.ReactNode }) {
     openTerminal: () => setTerminalOpen(true),
     closeTerminal: () => setTerminalOpen(false),
     toggleTerminal: () => setTerminalOpen(o => !o),
-  }), [isDark, locale, isPlaying, isMuted, volume, currentTime, duration, terminalOpen]);
+    unavailableCase,
+    openUnavailable: (name: string) => setUnavailableCase(name),
+    closeUnavailable: () => setUnavailableCase(null),
+  }), [isDark, locale, isPlaying, isMuted, volume, currentTime, duration, terminalOpen, unavailableCase]);
 
   return <ShellCtx.Provider value={value}>{children}</ShellCtx.Provider>;
 }

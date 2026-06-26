@@ -11,7 +11,7 @@ const T = {
     line1Pre: "I'm a",
     line1Post: "Designer",
     rotatingWords: ["Product", "UX", "UI", "UI/UX", "Visual", "Graphic", "Brand", "Systems", "Digital", "Full Stack"],
-    body: "and I've been creating digital experiences that resonate with people for over 9 years — leading design at early-stage startups, shaping design systems, and shipping product end-to-end.",
+    body: "and I've been creating digital experiences that resonate with people for over 7 years — leading design at early-stage startups, shaping design systems, and shipping product end-to-end.",
     based: "Based in Mexico · working globally",
     focus: "Currently: design systems · web platforms · mobile",
     ctaPrimary: "Get in touch",
@@ -25,7 +25,7 @@ const T = {
     line1Pre: "Soy un Diseñador",
     line1Post: "",
     rotatingWords: ["de Producto", "UX", "UI", "UI/UX", "Visual", "Gráfico", "de Marca", "de Sistemas", "Digital", "Full Stack"],
-    body: "y llevo más de 9 años creando experiencias digitales que conectan con las personas — liderando diseño en startups en etapa temprana, construyendo design systems y enviando producto de principio a fin.",
+    body: "y llevo más de 7 años creando experiencias digitales que conectan con las personas — liderando diseño en startups en etapa temprana, construyendo design systems y enviando producto de principio a fin.",
     based: "Desde México · trabajando globalmente",
     focus: "Actualmente: design systems · plataformas web · mobile",
     ctaPrimary: "Hablemos",
@@ -132,8 +132,9 @@ export default function HeroPanel() {
         <span>{t.statusLabel}·{t.statusValue}</span>
       </div>
 
-      {/* Centered content */}
-      <div style={{ flex: 1, display: "flex", flexDirection: "column", justifyContent: "center", maxWidth: 880 }}>
+      {/* Centered content — on mobile, paddingBottom pushes the visual center up so
+          the stack clears the URL bar / scroll indicator area. */}
+      <div style={{ flex: 1, display: "flex", flexDirection: "column", justifyContent: "center", maxWidth: 880, paddingBottom: isMobile ? 96 : 0 }}>
         <motion.div
           initial={{ opacity: 0, y: 14 }}
           animate={{ opacity: 1, y: 0 }}
@@ -248,12 +249,16 @@ export default function HeroPanel() {
         </motion.div>
       </div>
 
-      {/* Conventional scroll indicator — fades away as the user starts scrolling */}
+      {/* Conventional scroll indicator — fades away as the user starts scrolling.
+          On mobile, anchor well above the URL bar / home indicator using
+          safe-area-inset-bottom + a generous offset so it never gets cropped. */}
       <motion.div
         aria-hidden="true"
         style={{
           position: "absolute",
-          bottom: "clamp(20px, 3.2vh, 32px)",
+          bottom: isMobile
+            ? "calc(env(safe-area-inset-bottom, 0px) + 72px)"
+            : "clamp(20px, 3.2vh, 32px)",
           left: 0,
           right: 0,
           display: "flex",

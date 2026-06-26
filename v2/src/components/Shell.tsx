@@ -7,6 +7,7 @@ import Sidebar from "./Sidebar";
 import MobileNav from "./MobileNav";
 import Terminal from "./Terminal";
 import CustomCursor from "./CustomCursor";
+import UnavailableModal from "./UnavailableModal";
 
 function ShellInner({ children }: { children: React.ReactNode }) {
   const {
@@ -57,6 +58,9 @@ function ShellInner({ children }: { children: React.ReactNode }) {
 
       {/* Terminal drawer */}
       <Terminal />
+
+      {/* Unavailable case-study modal */}
+      <UnavailableModal />
 
       {/* Custom cursor — fine-pointer devices only */}
       <CustomCursor />

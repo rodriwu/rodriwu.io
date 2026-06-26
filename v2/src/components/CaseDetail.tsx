@@ -233,7 +233,7 @@ function Hero({
           ) : (
             <div style={{ position: "relative", width: "100%", maxWidth: "calc(90vh * 16 / 9)", aspectRatio: "16 / 9", overflow: "hidden", background: cardBg, margin: "0 auto" }}>
               {/* eslint-disable-next-line @next/next/no-img-element */}
-              <img src={cs.cover} alt={cs.shortTitle} style={{ position: "absolute", inset: 0, width: "100%", height: "100%", objectFit: "contain" }} />
+              <img src={cs.cover} alt={cs.shortTitle} style={{ position: "absolute", inset: 0, width: "100%", height: "100%", objectFit: cs.coverFit ?? "contain" }} />
             </div>
           )}
         </motion.div>
@@ -447,7 +447,7 @@ function Body({
             type BG = { fullWidth: boolean; items: { blk: CaseBlock; idx: number }[] };
             const blockGroups: BG[] = [];
             s.blocks.forEach((blk, i) => {
-              const fw = blk.type === "phoneFlow";
+              const fw = blk.type === "phoneFlow" || blk.type === "sectionBreak" || (blk.type === "image" && !!blk.frame && !!blk.frameBleed);
               const last = blockGroups[blockGroups.length - 1];
               if (!last || last.fullWidth !== fw) blockGroups.push({ fullWidth: fw, items: [{ blk, idx: i }] });
               else last.items.push({ blk, idx: i });
@@ -536,7 +536,7 @@ function Block({
 
     case "h3":
       return (
-        <h3 className="font-mono" style={{ fontSize: isMobile ? 17 : 18, fontWeight: 500, color: ink, letterSpacing: "-0.01em", marginTop: 12, marginBottom: -4 }}>
+        <h3 className="font-mono" style={{ fontSize: isMobile ? 17 : 18, fontWeight: 500, color: ink, letterSpacing: "-0.01em", marginTop: blk.mt ?? 12, marginBottom: -4 }}>
           {blk.text}
         </h3>
       );
@@ -548,6 +548,60 @@ function Block({
       const isWide = !!blk.wide;
       const fit = blk.fit ?? "natural";
       const isNatural = fit === "natural";
+
+      if (blk.frame) {
+        const bleed = !!blk.frameBleed;
+        const frameBox = (
+          <div style={{
+            background: blk.frame,
+            borderRadius: isMobile ? 16 : 22,
+            padding: isMobile ? "22px 18px" : (bleed ? "56px 72px" : "32px 36px"),
+            boxSizing: "border-box",
+            display: "flex",
+            justifyContent: "center",
+            width: "100%",
+          }}>
+            <div
+              style={{ width: "100%", maxWidth: isMobile ? "100%" : (bleed ? "90%" : "100%"), borderRadius: 10, overflow: "hidden", boxShadow: bleed ? "0 18px 40px rgba(0,0,0,0.28)" : "none", cursor: onImageOpen ? "pointer" : "default" }}
+              onClick={() => onImageOpen?.(blk.src, blk.alt)}
+            >
+              {/* eslint-disable-next-line @next/next/no-img-element */}
+              <img src={blk.src} alt={blk.alt ?? ""} style={{ width: "100%", height: "auto", display: "block" }} />
+            </div>
+          </div>
+        );
+        const framedCaption = blk.caption && (
+          <figcaption style={{ marginTop: 14, fontSize: 13, color: dim, lineHeight: 1.5, textAlign: "center", width: "100%" }}>
+            {blk.caption}
+          </figcaption>
+        );
+        if (!bleed) {
+          return (
+            <figure style={{ margin: 0, width: "100%" }}>
+              {frameBox}
+              {framedCaption}
+            </figure>
+          );
+        }
+        const stacked = (
+          <div style={{ width: "100%", maxWidth: 1280 }}>
+            {frameBox}
+            {framedCaption}
+          </div>
+        );
+        if (isMobile) {
+          return <figure style={{ margin: 0 }}>{stacked}</figure>;
+        }
+        const bleedMarginLeft =
+          "calc(-1 * max(0px, (100vw - var(--rw-sidebar) - var(--rw-body-max)) / 2) - var(--rw-body-pad) - var(--rw-toc-offset))";
+        return (
+          <figure style={{ margin: 0, position: "relative", zIndex: 5 }}>
+            <div style={{ width: "calc(100vw - var(--rw-sidebar))", marginLeft: bleedMarginLeft, display: "flex", justifyContent: "center", position: "relative", zIndex: 5 }}>
+              {stacked}
+            </div>
+          </figure>
+        );
+      }
 
       const caption = blk.caption && (
         <figcaption className="font-mono" style={{ fontSize: 11, letterSpacing: "0.04em", color: dim, marginTop: 10, lineHeight: 1.5, textAlign: isFullBleed ? "center" : undefined }}>
@@ -598,6 +652,47 @@ function Block({
       }
 
       return <figure style={{ margin: 0 }}>{imgEl}{caption}</figure>;
+    }
+
+    case "sectionBreak": {
+      const verticalPad = isMobile ? 56 : 96;
+      const imgWrap = (
+        <div
+          style={{ width: "100%", overflow: "hidden", borderRadius: isMobile ? 8 : 12, background: cardBg, cursor: onImageOpen ? "pointer" : "default" }}
+          onClick={() => onImageOpen?.(blk.src, blk.alt)}
+        >
+          {/* eslint-disable-next-line @next/next/no-img-element */}
+          <img src={blk.src} alt={blk.alt ?? ""} style={{ width: "100%", height: "auto", display: "block" }} />
+        </div>
+      );
+      const caption = blk.caption && (
+        <figcaption className="font-mono" style={{ fontSize: 11, letterSpacing: "0.04em", color: dim, marginTop: 14, lineHeight: 1.5, textAlign: "center" }}>
+          {blk.caption}
+        </figcaption>
+      );
+      if (isMobile) {
+        return (
+          <figure style={{ margin: `${verticalPad}px 0` }}>
+            {imgWrap}
+            {caption}
+          </figure>
+        );
+      }
+      const bleedMarginLeft =
+        "calc(-1 * max(0px, (100vw - var(--rw-sidebar) - var(--rw-body-max)) / 2) - var(--rw-body-pad) - var(--rw-toc-offset))";
+      return (
+        <figure style={{ margin: `${verticalPad}px 0` }}>
+          <div
+            data-fullbleed-card
+            style={{ width: "calc(100vw - var(--rw-sidebar))", marginLeft: bleedMarginLeft, display: "flex", justifyContent: "center" }}
+          >
+            <div style={{ width: "93vw", maxWidth: 1710 }}>
+              {imgWrap}
+            </div>
+          </div>
+          {caption}
+        </figure>
+      );
     }
 
     case "imagePair": {
@@ -708,6 +803,19 @@ function Block({
           dim={dim}
           fade={fade}
           onImageOpen={onImageOpen}
+        />
+      );
+
+    case "ticker":
+      return (
+        <Ticker
+          items={blk.items}
+          aspect={blk.aspect}
+          speed={blk.speed}
+          cardWidth={blk.cardWidth}
+          isMobile={isMobile}
+          cardBg={cardBg}
+          fade={fade}
         />
       );
 
@@ -862,6 +970,80 @@ function Block({
             ))}
           </div>
         </div>
+      );
+    }
+
+    case "externalLink":
+      return (
+        <a
+          href={blk.href}
+          target="_blank"
+          rel="noopener noreferrer"
+          className="font-mono"
+          style={{
+            display: "inline-flex",
+            alignItems: "center",
+            gap: 10,
+            padding: isMobile ? "12px 16px" : "13px 18px",
+            border: `1px solid ${fade}`,
+            borderRadius: 8,
+            textDecoration: "none",
+            color: ink,
+            background: cardBg,
+            fontSize: isMobile ? 13 : 14,
+            letterSpacing: "-0.005em",
+            alignSelf: "flex-start",
+            transition: "border-color 0.18s ease, transform 0.18s ease",
+          }}
+          onMouseEnter={(e) => { (e.currentTarget as HTMLElement).style.borderColor = accent; }}
+          onMouseLeave={(e) => { (e.currentTarget as HTMLElement).style.borderColor = fade; }}
+        >
+          <span>{blk.description ? <><span style={{ color: body }}>{blk.description} </span><span style={{ color: accent }}>{blk.label}</span></> : blk.label}</span>
+          <ArrowUpRight size={14} strokeWidth={1.8} style={{ color: accent, flexShrink: 0 }} />
+        </a>
+      );
+
+    case "devicePair": {
+      const frameBg = "#628AD0";
+      return (
+        <figure style={{ margin: 0, width: "100%", maxWidth: 960, marginLeft: "auto", marginRight: "auto" }}>
+          <div style={{
+            width: "100%",
+            background: frameBg,
+            borderRadius: isMobile ? 16 : 20,
+            padding: isMobile ? "20px 16px" : "32px 36px",
+            display: "flex",
+            flexDirection: isMobile ? "column" : "row",
+            alignItems: "center",
+            justifyContent: "center",
+            gap: isMobile ? 18 : 28,
+            boxSizing: "border-box",
+          }}>
+            <div
+              style={{ flex: isMobile ? "0 0 auto" : "1 1 auto", width: isMobile ? "100%" : "auto", maxWidth: isMobile ? "100%" : "74%", cursor: onImageOpen ? "pointer" : "default" }}
+              onClick={() => onImageOpen?.(blk.desktop.src, blk.desktop.alt)}
+            >
+              <div style={{ borderRadius: 10, overflow: "hidden", boxShadow: "0 14px 30px rgba(0,0,0,0.26)" }}>
+                {/* eslint-disable-next-line @next/next/no-img-element */}
+                <img src={blk.desktop.src} alt={blk.desktop.alt ?? ""} style={{ width: "100%", height: "auto", display: "block" }} />
+              </div>
+            </div>
+            <div
+              style={{ flex: "0 0 auto", width: isMobile ? "55%" : "20%", cursor: onImageOpen ? "pointer" : "default" }}
+              onClick={() => onImageOpen?.(blk.mobile.src, blk.mobile.alt)}
+            >
+              <div style={{ borderRadius: 14, overflow: "hidden", boxShadow: "0 14px 30px rgba(0,0,0,0.30)" }}>
+                {/* eslint-disable-next-line @next/next/no-img-element */}
+                <img src={blk.mobile.src} alt={blk.mobile.alt ?? ""} style={{ width: "100%", height: "auto", display: "block" }} />
+              </div>
+            </div>
+          </div>
+          {blk.caption && (
+            <figcaption style={{ marginTop: 14, fontSize: 13, color: dim, lineHeight: 1.5, textAlign: "center", width: "100%" }}>
+              {blk.caption}
+            </figcaption>
+          )}
+        </figure>
       );
     }
   }
@@ -1057,12 +1239,13 @@ function LightboxOverlay({ src, alt, onClose }: { src: string; alt: string; onCl
 function ConceptTabs({
   items, isMobile, cardBg, accent, ink, body: bodyColor, dim, fade, onImageOpen,
 }: {
-  items: { label: string; tabLabel?: string; description?: string; src: string; alt?: string }[];
+  items: { label: string; tabLabel?: string; description?: string; src: string; alt?: string; winner?: boolean }[];
   isMobile?: boolean;
   cardBg: string; accent: string; ink: string; body: string; dim: string; fade: string;
   onImageOpen?: (src: string, alt?: string) => void;
 }) {
-  const [activeIdx, setActiveIdx] = useState(0);
+  const winnerIdx = items.findIndex((i) => i.winner);
+  const [activeIdx, setActiveIdx] = useState(winnerIdx >= 0 ? winnerIdx : 0);
   const active = items[activeIdx];
 
   return (
@@ -1077,12 +1260,24 @@ function ConceptTabs({
               onClick={() => setActiveIdx(i)}
               style={{ display: "flex", alignItems: "flex-start", gap: 14, padding: "14px 0", borderTop: `1px solid ${fade}`, borderBottom: "none", borderLeft: "none", borderRight: "none", background: "none", cursor: "pointer", textAlign: "left", width: "100%" }}
             >
-              <div style={{ width: 26, height: 26, borderRadius: "50%", background: isActive ? `${accent}20` : cardBg, border: `1.5px solid ${isActive ? accent : fade}`, display: "flex", alignItems: "center", justifyContent: "center", flexShrink: 0, marginTop: 3, transition: "all 0.18s ease" }}>
-                <span className="font-mono" style={{ fontSize: 9, color: isActive ? accent : dim }}>{String(i + 1).padStart(2, "0")}</span>
+              <div style={{ width: 26, height: 26, borderRadius: "50%", background: item.winner ? accent : (isActive ? `${accent}20` : cardBg), border: `1.5px solid ${item.winner || isActive ? accent : fade}`, display: "flex", alignItems: "center", justifyContent: "center", flexShrink: 0, marginTop: 3, transition: "all 0.18s ease" }}>
+                {item.winner ? (
+                  <Check size={13} strokeWidth={2.6} style={{ color: "#0c0e22" }} />
+                ) : (
+                  <span className="font-mono" style={{ fontSize: 9, color: isActive ? accent : dim }}>{String(i + 1).padStart(2, "0")}</span>
+                )}
               </div>
               <div style={{ flex: 1, minWidth: 0 }}>
-                <div style={{ fontSize: isMobile ? 14 : 15, fontWeight: 500, color: isActive ? ink : dim, marginBottom: item.description ? 4 : 0, lineHeight: 1.3, transition: "color 0.18s ease" }}>
-                  {item.label}
+                <div style={{ fontSize: isMobile ? 14 : 15, fontWeight: 500, color: isActive ? ink : dim, marginBottom: item.description ? 4 : 0, lineHeight: 1.3, transition: "color 0.18s ease", display: "inline-flex", alignItems: "center", gap: 8, flexWrap: "wrap" }}>
+                  <span>{item.label}</span>
+                  {item.winner && (
+                    <span
+                      className="font-mono"
+                      style={{ fontSize: 9, letterSpacing: "0.14em", padding: "2px 7px", borderRadius: 999, background: `${accent}20`, color: accent, textTransform: "uppercase", lineHeight: 1.4 }}
+                    >
+                      Winner
+                    </span>
+                  )}
                 </div>
                 {item.description && (
                   <div style={{ fontSize: 13, color: dim, lineHeight: 1.55 }}>{item.description}</div>
@@ -1103,8 +1298,9 @@ function ConceptTabs({
               key={i}
               onClick={() => setActiveIdx(i)}
               className="font-mono"
-              style={{ padding: "5px 12px", borderRadius: 6, border: "none", background: i === activeIdx ? `${accent}18` : "transparent", color: i === activeIdx ? accent : dim, fontSize: 9, letterSpacing: "0.14em", textTransform: "uppercase", cursor: "pointer", transition: "all 0.18s ease" }}
+              style={{ display: "inline-flex", alignItems: "center", gap: 6, padding: "5px 12px", borderRadius: 6, border: "none", background: i === activeIdx ? `${accent}18` : "transparent", color: i === activeIdx ? accent : dim, fontSize: 9, letterSpacing: "0.14em", textTransform: "uppercase", cursor: "pointer", transition: "all 0.18s ease" }}
             >
+              {item.winner && <Check size={11} strokeWidth={2.6} style={{ color: accent }} />}
               {item.tabLabel ?? `Concept ${i + 1}`}
             </button>
           ))}
@@ -1199,6 +1395,87 @@ function Carousel({
         </figcaption>
       )}
     </figure>
+  );
+}
+
+/* ──────────────────────────────────────────────────────────────
+   Ticker — auto-scrolling horizontal strip of thumbnails.
+   Items are duplicated so the loop is seamless. Edges fade out.
+   ────────────────────────────────────────────────────────────── */
+function Ticker({
+  items, aspect, speed, cardWidth, isMobile, cardBg, fade,
+}: {
+  items: { src: string; alt?: string }[];
+  aspect?: string;
+  /** seconds per full loop — bigger = slower */
+  speed?: number;
+  /** desktop card width in px */
+  cardWidth?: number;
+  isMobile?: boolean;
+  cardBg: string;
+  fade: string;
+}) {
+  const aspectCss = (aspect ?? "1/1").replace("/", " / ");
+  const W = isMobile ? 160 : (cardWidth ?? 240);
+  const GAP = isMobile ? 14 : 22;
+  const DUR = speed ?? Math.max(24, items.length * 4);
+
+  /* Double the list so the slide can translate -50% and loop without a gap. */
+  const loop = [...items, ...items];
+
+  return (
+    <div
+      style={{
+        position: "relative",
+        width: "100%",
+        overflow: "hidden",
+        maskImage: "linear-gradient(to right, transparent 0%, #000 6%, #000 94%, transparent 100%)",
+        WebkitMaskImage: "linear-gradient(to right, transparent 0%, #000 6%, #000 94%, transparent 100%)",
+      }}
+    >
+      <div
+        className="rw-ticker-track"
+        style={{
+          display: "flex",
+          gap: GAP,
+          width: "max-content",
+          animation: `rw-ticker ${DUR}s linear infinite`,
+        }}
+      >
+        {loop.map((it, i) => (
+          <div
+            key={i}
+            style={{
+              flex: "0 0 auto",
+              width: W,
+              aspectRatio: aspectCss,
+              borderRadius: 12,
+              background: cardBg,
+              border: `1px solid ${fade}`,
+              overflow: "hidden",
+            }}
+          >
+            {/* eslint-disable-next-line @next/next/no-img-element */}
+            <img
+              src={it.src}
+              alt={it.alt ?? ""}
+              draggable={false}
+              style={{ width: "100%", height: "100%", objectFit: "cover", objectPosition: "top center", display: "block" }}
+            />
+          </div>
+        ))}
+      </div>
+      <style jsx>{`
+        @keyframes rw-ticker {
+          from { transform: translateX(0); }
+          to   { transform: translateX(-50%); }
+        }
+        .rw-ticker-track:hover { animation-play-state: paused; }
+        @media (prefers-reduced-motion: reduce) {
+          .rw-ticker-track { animation: none; }
+        }
+      `}</style>
+    </div>
   );
 }
 
@@ -1357,27 +1634,46 @@ function NextCase({
 }: {
   next: CaseStudy; accent: string; ink: string; dim: string; fade: string; cardBg: string;
 }) {
+  const { openUnavailable } = useShell();
+  const cardStyle = { display: "flex", alignItems: "center", justifyContent: "space-between", padding: "22px 24px", borderRadius: 14, background: cardBg, border: `1px solid ${fade}`, textDecoration: "none", transition: "background 0.18s ease, border-color 0.18s ease" } as const;
+  const inner = (
+    <>
+      <div>
+        <div className="font-mono" style={{ fontSize: 10, letterSpacing: "0.14em", color: dim, marginBottom: 6 }}>
+          {next.company.toUpperCase()} · {next.year.toUpperCase()}
+        </div>
+        <div style={{ fontSize: 20, fontWeight: 500, color: ink, letterSpacing: "-0.02em" }}>{next.title}</div>
+      </div>
+      <div style={{ display: "flex", alignItems: "center", gap: 8, color: accent, flexShrink: 0 }}>
+        <span className="font-mono" style={{ fontSize: 11, letterSpacing: "0.12em" }}>NEXT</span>
+        <ArrowRight size={16} strokeWidth={2} />
+      </div>
+    </>
+  );
   return (
     <div style={{ paddingTop: 28, marginTop: 36 }}>
       <p className="font-mono" style={{ fontSize: 10, letterSpacing: "0.18em", color: dim, marginBottom: 14 }}>NEXT CASE</p>
-      <Link
-        href={`/case/${next.id}`}
-        className="group"
-        style={{ display: "flex", alignItems: "center", justifyContent: "space-between", padding: "22px 24px", borderRadius: 14, background: cardBg, border: `1px solid ${fade}`, textDecoration: "none", transition: "background 0.18s ease, border-color 0.18s ease" }}
-        onMouseEnter={(e) => { (e.currentTarget as HTMLElement).style.borderColor = accent + "66"; }}
-        onMouseLeave={(e) => { (e.currentTarget as HTMLElement).style.borderColor = fade; }}
-      >
-        <div>
-          <div className="font-mono" style={{ fontSize: 10, letterSpacing: "0.14em", color: dim, marginBottom: 6 }}>
-            {next.company.toUpperCase()} · {next.year.toUpperCase()}
-          </div>
-          <div style={{ fontSize: 20, fontWeight: 500, color: ink, letterSpacing: "-0.02em" }}>{next.title}</div>
-        </div>
-        <div style={{ display: "flex", alignItems: "center", gap: 8, color: accent, flexShrink: 0 }}>
-          <span className="font-mono" style={{ fontSize: 11, letterSpacing: "0.12em" }}>NEXT</span>
-          <ArrowRight size={16} strokeWidth={2} />
-        </div>
-      </Link>
+      {next.unavailable ? (
+        <button
+          type="button"
+          onClick={() => openUnavailable(next.shortTitle)}
+          style={{ ...cardStyle, width: "100%", font: "inherit", color: "inherit", cursor: "pointer", textAlign: "left" }}
+          onMouseEnter={(e) => { (e.currentTarget as HTMLElement).style.borderColor = accent + "66"; }}
+          onMouseLeave={(e) => { (e.currentTarget as HTMLElement).style.borderColor = fade; }}
+        >
+          {inner}
+        </button>
+      ) : (
+        <Link
+          href={`/case/${next.id}`}
+          className="group"
+          style={cardStyle}
+          onMouseEnter={(e) => { (e.currentTarget as HTMLElement).style.borderColor = accent + "66"; }}
+          onMouseLeave={(e) => { (e.currentTarget as HTMLElement).style.borderColor = fade; }}
+        >
+          {inner}
+        </Link>
+      )}
     </div>
   );
 }

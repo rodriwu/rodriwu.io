@@ -3,16 +3,19 @@
 import Link from "next/link";
 import { motion } from "framer-motion";
 import type { CaseStudy } from "@/data/caseStudies";
+import { useShell } from "@/components/context/ShellContext";
 
 interface Props {
   cs: CaseStudy;
   aspectRatio?: string;
+  showOverlay?: boolean;
 }
 
 /* CaseCard — thumbnail. Width is controlled by the parent.
    - Internal case: click → /case/[id] (in-app navigation).
    - External case (cs.external): click → cs.url in a new tab.       */
-export default function CaseCard({ cs, aspectRatio = "1 / 1" }: Props) {
+export default function CaseCard({ cs, aspectRatio = "1 / 1", showOverlay = false }: Props) {
+  const { openUnavailable } = useShell();
   const sharedStyle = {
     display: "block",
     position: "relative",
@@ -37,6 +40,47 @@ export default function CaseCard({ cs, aspectRatio = "1 / 1" }: Props) {
     />
   );
 
+  const overlay = showOverlay && (
+    <div
+      aria-hidden="true"
+      style={{
+        position: "absolute",
+        bottom: 0,
+        left: 0,
+        right: 0,
+        background: "linear-gradient(to top, rgba(0,0,0,0.82) 0%, rgba(0,0,0,0.44) 50%, transparent 100%)",
+        padding: "clamp(18px, 2.6vw, 28px)",
+        pointerEvents: "none",
+      }}
+    >
+      <span
+        style={{
+          display: "block",
+          fontSize: "clamp(14px, 1.6vw, 20px)",
+          fontWeight: 500,
+          color: "rgba(255,255,255,0.96)",
+          letterSpacing: "-0.025em",
+          lineHeight: 1.15,
+          marginBottom: 6,
+        }}
+      >
+        {cs.shortTitle}
+      </span>
+      <span
+        style={{
+          display: "block",
+          fontFamily: "ui-monospace, monospace",
+          fontSize: 10,
+          letterSpacing: "0.06em",
+          color: "rgba(255,255,255,0.52)",
+          lineHeight: 1.3,
+        }}
+      >
+        {cs.tagline}
+      </span>
+    </div>
+  );
+
   return (
     <motion.div
       initial={{ opacity: 0, y: 8 }}
@@ -49,7 +93,18 @@ export default function CaseCard({ cs, aspectRatio = "1 / 1" }: Props) {
         aspectRatio,
       }}
     >
-      {cs.external ? (
+      {cs.unavailable ? (
+        <button
+          type="button"
+          onClick={() => openUnavailable(cs.shortTitle)}
+          aria-label={`${cs.shortTitle} (unavailable)`}
+          className="rw-thumb"
+          style={{ ...sharedStyle, background: "transparent", border: "none", padding: 0, cursor: "pointer", textAlign: "left" }}
+        >
+          {image}
+          {overlay}
+        </button>
+      ) : cs.external ? (
         <a
           href={cs.url}
           target="_blank"
@@ -60,6 +115,7 @@ export default function CaseCard({ cs, aspectRatio = "1 / 1" }: Props) {
           style={sharedStyle}
         >
           {image}
+          {overlay}
         </a>
       ) : (
         <Link
@@ -70,6 +126,7 @@ export default function CaseCard({ cs, aspectRatio = "1 / 1" }: Props) {
           style={sharedStyle}
         >
           {image}
+          {overlay}
         </Link>
       )}
     </motion.div>

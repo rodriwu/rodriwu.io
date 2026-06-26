@@ -9,8 +9,8 @@ import { useShell } from "./context/ShellContext";
 import CaseCard from "./panels/CaseStudyPanel";
 
 const T = {
-  en: { label: "SELECTED.work", footer: "scroll · or drag the bar", skipToContact: "Skip to contact ↓", viewAll: "View all work", viewAllSub: "Full case study index" },
-  es: { label: "TRABAJO.seleccionado", footer: "scroll · o arrastra la barra", skipToContact: "Ir al contacto ↓", viewAll: "Ver todo", viewAllSub: "Índice completo de casos" },
+  en: { label: "SELECTED.work", footer: "scroll · or drag the bar", skipToContact: "Skip to contact ↓", viewAll: "View all work", viewAllSub: "Full project archive" },
+  es: { label: "TRABAJO.seleccionado", footer: "scroll · o arrastra la barra", skipToContact: "Ir al contacto ↓", viewAll: "Ver todo", viewAllSub: "Archivo completo de proyectos" },
 };
 
 /* Cases visible on the home gallery. Any case with `homeGallery: false` is
@@ -217,7 +217,7 @@ function DesktopStrip({ isDark, t }: { isDark: boolean; t: typeof T["en"] }) {
                   width: "min(72vh, 56vw)",
                 }}
               >
-                <CaseCard cs={cs} />
+                <CaseCard cs={cs} showOverlay />
               </div>
             ))}
             <div

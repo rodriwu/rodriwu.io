@@ -10,8 +10,8 @@
    ────────────────────────────────────────────────────────────── */
 export type CaseBlock =
   | { type: "p"; text: string }
-  | { type: "h3"; text: string }
-  | { type: "image"; src: string; alt?: string; caption?: string; fullBleed?: boolean; wide?: boolean; fit?: "cover" | "contain" | "natural"; aspect?: string }
+  | { type: "h3"; text: string; mt?: number }
+  | { type: "image"; src: string; alt?: string; caption?: string; fullBleed?: boolean; wide?: boolean; fit?: "cover" | "contain" | "natural"; aspect?: string; frame?: string; frameBleed?: boolean }
   | { type: "imagePair"; fit?: "cover" | "contain" | "natural"; items: { src: string; label?: string; caption?: string; alt?: string; fit?: "cover" | "contain" | "natural" }[] }
   | { type: "objectives"; items: { emoji: string; label: string; sub: string }[] }
   | { type: "statPills"; items: { value: string; label?: string }[] }
@@ -19,9 +19,13 @@ export type CaseBlock =
   | { type: "quote"; text: string }
   | { type: "metricCards"; items: { value: string; label: string; sub?: string }[] }
   | { type: "carousel"; items: { src: string; alt?: string; caption?: string; label?: string }[]; aspect?: string }
-  | { type: "conceptTabs"; items: { label: string; tabLabel?: string; description?: string; src: string; alt?: string }[] }
+  | { type: "ticker"; items: { src: string; alt?: string }[]; aspect?: string; speed?: number; cardWidth?: number }
+  | { type: "conceptTabs"; items: { label: string; tabLabel?: string; description?: string; src: string; alt?: string; winner?: boolean }[] }
+  | { type: "sectionBreak"; src: string; alt?: string; caption?: string }
   | { type: "painPoints"; screenshot?: string; screenshotMobile?: string; screenshotAlt?: string; items: string[] }
-  | { type: "phoneFlow"; heading?: string; description?: string; mobileImage?: string; mobileAlt?: string; items: { label: string; description?: string; src: string; alt?: string }[] };
+  | { type: "phoneFlow"; heading?: string; description?: string; mobileImage?: string; mobileAlt?: string; items: { label: string; description?: string; src: string; alt?: string }[] }
+  | { type: "devicePair"; desktop: { src: string; alt?: string }; mobile: { src: string; alt?: string }; caption?: string }
+  | { type: "externalLink"; label: string; href: string; description?: string };
 
 export interface CaseSection {
   /* URL-fragment-safe id used as the anchor target and TOC link */
@@ -60,6 +64,10 @@ export interface CaseStudy {
   /* Multiple cover images — renders as a carousel in the Hero. Falls back
      to the single `cover` image when absent. */
   coverCarousel?: string[];
+  /* Object-fit for the single cover image on the detail page. Defaults to
+     "contain" so existing case-study covers stay letterboxed inside the
+     16:9 frame. Set to "cover" when the asset is designed to bleed. */
+  coverFit?: "cover" | "contain";
   /* Personal closing section rendered after all body sections. */
   conclusion?: {
     quote: string;
@@ -73,6 +81,10 @@ export interface CaseStudy {
   /* When `false`, hides this case from the home page gallery — still shown
      on /work and still reachable at /case/[id]. Default: true. */
   homeGallery?: boolean;
+  /* When true, clicking the case anywhere (gallery, /work, next-case)
+     opens an "unavailable" modal instead of navigating. Use for cases
+     that aren't ready to be read yet. */
+  unavailable?: boolean;
   /* Override the automatic "next case" computed from array position. */
   nextCaseId?: string;
   /* Long-form case study body. When present, /case/[id] renders the
@@ -552,7 +564,7 @@ export const CASE_STUDIES: CaseStudy[] = [
     title: "Redesigning The Moving Experience",
     shortTitle: "MovingPlace",
     company: "Porch Moving Group",
-    year: "2024 – 2025",
+    year: "2024 to 2025",
     role: "UX Design, Creative Direction",
     deliverables: "Optimized Experience, CMS Dev, Design System",
     tagline: "Moving simplified.",
@@ -754,8 +766,9 @@ export const CASE_STUDIES: CaseStudy[] = [
               {
                 src: "/case-studies/mp/strategy/concept-b.avif",
                 alt: "Concept B — New minimalist brand direction, winner",
-                label: "Concept B — New Minimalist Brand ✓",
+                label: "Concept B — New Minimalist Brand",
                 description: "Neutral palette, type-forward identity, stood completely on its own. Tested as more trustworthy and let MovingPlace build its own reputation.",
+                winner: true,
               },
             ],
           },
@@ -851,43 +864,93 @@ export const CASE_STUDIES: CaseStudy[] = [
           { type: "h3", text: "Testing how to customize a quote" },
           {
             type: "p",
-            text: "Tested two customization patterns: a modal that kept things compact but hid options behind a click, and an inline editor that put everything in context. The inline version won — higher confidence scores and more completed quotes.",
+            text: "Tested two customization patterns: a modal that kept things compact but hid options behind a click, and an inline editor that put everything in context. Against all odds — and against most of the team's bets — Version B, the inline editor, came out on top: higher confidence scores in testing and more completed quotes.",
           },
           {
-            type: "imagePair",
+            type: "conceptTabs",
             items: [
-              { src: placeholder("Version A · Modal-driven", "#f59e0b", "4/3"), label: "Version A", caption: "Modal-driven customizer — compact but opaque." },
-              { src: placeholder("Version B · Inline editor", "#f59e0b", "4/3"), label: "Version B", caption: "Inline editor — every option visible in context. Winner." },
+              {
+                src: "/case-studies/mp/ux/customize-quote-a.png",
+                alt: "Version A — modal-driven customizer that hid options behind a click",
+                label: "Version A — Modal-driven",
+                tabLabel: "Version A",
+                description: "Compact layout, but customization options sat behind a modal — users had to commit to a click before they could see what they were changing.",
+              },
+              {
+                src: "/case-studies/mp/ux/customize-quote-b.png",
+                alt: "Version B — inline editor with every option visible in context (winner)",
+                label: "Version B — Inline editor",
+                tabLabel: "Version B",
+                description: "Every option visible in context. Higher confidence scores in testing and more completed quotes — this is the version we shipped.",
+                winner: true,
+              },
             ],
+          },
+          {
+            type: "p",
+            text: "One thing worth calling out before moving on: the subtle differences you'll notice between the screenshots and flow examples throughout this case study aren't accidents. They reflect the rolling A/B tests that ran in between the big design changes — every time we landed on a winner, we'd test smaller variations on top of it (copy, layout, defaults, labels) to keep tightening the decision. The shipped product is the cumulative result of those micro-iterations, not any single redesign.",
+          },
+          {
+            type: "sectionBreak",
+            src: "/case-studies/mp/ux/big-break.png",
+            alt: "MovingPlace booking flow — full visual recap of the redesigned UX",
           },
         ],
       },
       {
         id: "cms",
         label: "CMS & Design System",
-        heading: "Atoms that scale.",
+        heading: "We designed atomic-level patterns that combine into templates.",
         blocks: [
           {
             type: "p",
-            text: "Launching in a new city used to take weeks. With a Tailwind-based component library, we got it down to hours.",
+            text: "Once the booking flow was locked in, we turned to the design system. Tailwind gave us a solid base — tokens and components we could reuse across the whole site, not just checkout.",
+          },
+          {
+            type: "p",
+            text: "The bigger play, though, was the front site. We'd already wireframed a stack of templates early on — city pages, state pages, service pages — all built around SEO and internal linking.",
           },
           {
             type: "statPills",
             items: [
-              { value: "14+", label: "CMS landing pages" },
-              { value: "Tailwind", label: "component foundation" },
-              { value: "1", label: "source of truth" },
+              { value: "+14", label: "CMS level landing pages" },
+              { value: "Tailwind", label: "Based Components" },
             ],
           },
           {
             type: "image",
-            src: placeholder("Design system · Atoms → templates", "#f59e0b", "16/9"),
-            alt: "Design system overview from atoms to templates",
-            caption: "Fig. 05 — From tokens and atoms up to page templates. Composable end to end.",
+            src: "/case-studies/mp/cms/image1.png",
+            alt: "MovingPlace CMS & design system — image 1",
+          },
+          {
+            type: "image",
+            src: "/case-studies/mp/cms/image2.png",
+            alt: "MovingPlace CMS & design system — image 2",
           },
           {
             type: "p",
-            text: "Every landing page now pulls from the same library. New patterns earn their spot by getting used at least twice — anything below that lives in the sandbox. The discipline isn't building the system, it's knowing what to cut.",
+            text: "From there we set up a flexible CMS-driven modal system so we could spin up and manage these templates without friction — something that could scale with the business.",
+          },
+          {
+            type: "image",
+            src: "/case-studies/mp/cms/image3.png",
+            alt: "MovingPlace CMS & design system — image 3",
+          },
+          {
+            type: "image",
+            src: "/case-studies/mp/cms/image4.png",
+            alt: "MovingPlace CMS & design system — image 4",
+          },
+          { type: "h3", text: "Zooming out" },
+          {
+            type: "p",
+            text: "Across the project, the work moved through three phases — discovery, strategy, and solutions — with each stream overlapping the next. Research informed branding, branding fed wireframing, wireframing rolled into UX/UI, and the design system grew underneath all of it.",
+          },
+          {
+            type: "image",
+            src: "/case-studies/mp/timeline.png",
+            alt: "MovingPlace project timeline — Discovery, Strategy, Solutions",
+            caption: "Project timeline — from discovery through to the design system.",
           },
         ],
       },
@@ -901,46 +964,54 @@ export const CASE_STUDIES: CaseStudy[] = [
   {
     id: "pp",
     homeGallery: false,
-    title: "Moving Permits: Turning Bureaucracy Into Trust",
+    title: "Moving Permits: Turning Bureaucracy into Trust",
     shortTitle: "PermitPuller",
     company: "Porch Moving Group",
-    year: "2023 – 2024",
+    year: "2023 to 2024",
     role: "UX Design, UI Design",
     deliverables: "Optimized Experience, Booking Flow",
     tagline: "Permits, painlessly.",
     cover: "/covers/pp.png",
+    coverFit: "cover",
     accent: "#6366f1",
     size: "tall",
     metrics: [
-      { label: "Form completion rate", value: "38% → 80%" },
-      { label: "Faster fulfillment", value: "18%" },
+      { label: "Faster permit fulfillment", value: "18%" },
       { label: "User satisfaction", value: "91%" },
-      { label: "Repeat clients", value: "80%+" },
+      { label: "First-time → repeat clients", value: "80%+" },
     ],
     overview:
-      "A comprehensive redesign of PermitPuller, a platform for securing moving permits across US cities. The legacy system featured a daunting single-page form with 22+ fields and no status updates, leading to abandonment and frustration. The new flow guides users step-by-step through location, permit type, timeline, and add-ons — with a transparent dashboard and real-time notifications.",
+      "A full redesign of Permit Puller, the platform for pulling moving permits in U.S. cities. The legacy product was bleeding users at every step. We rebuilt it for clarity, trust, and speed.",
     challenge:
-      "Users faced a monolithic form, frequent mistakes from misunderstood fields, and felt ghosted after submitting. The redesign replaced this with a structured 5-step flow that reduced support queries by 40%.",
+      "The old system was one giant form with zero feedback after submit. Users abandoned it, often.",
     tags: ["UX Design", "UI Design", "Booking Flow", "B2C"],
-    images: ["/case-studies/pp-01.png", "/case-studies/pp-02.png", "/case-studies/pp-03.png"],
-    url: "https://www.rodriwu.com/pp",
+    images: [],
+    url: "/case/pp",
     body: [
       {
         id: "snapshot",
         label: "Snapshot",
-        heading: "The numbers that moved.",
+        eyebrow: "Redesigning the Moving Experience",
+        heading: "Moving Permits: Turning Bureaucracy into Trust.",
         blocks: [
           {
             type: "p",
-            text: "A 22-field wall of a form, cut down to five focused steps. Completion went from 38% to 80% in the first month — and the support queue got a lot quieter.",
+            text: "Permit Puller is the platform people use to pull moving permits in cities across the U.S. By 2023 the product was losing users at every step: opaque pricing, a monolithic form, no status updates after submit.",
+          },
+          {
+            type: "p",
+            text: "We rebuilt it from the ground up. Through interviews, persona work, and competitor analysis, we mapped the real friction and designed a step-by-step flow that made the bureaucracy feel like a service.",
+          },
+          {
+            type: "p",
+            text: "The new product lifted completion rates, sped up fulfillment, and brought users back for repeat permits. Clarity, it turns out, scales.",
           },
           {
             type: "metricCards",
             items: [
-              { value: "38% → 80%", label: "Form completion rate", sub: "42-point lift in the first month after launch." },
-              { value: "18%", label: "Faster fulfillment", sub: "Fewer errors, fewer back-and-forth corrections." },
-              { value: "91%", label: "User satisfaction", sub: "From first-time users post-launch." },
-              { value: "80%+", label: "Repeat clients", sub: "First-time users who returned for a second permit." },
+              { value: "18%", label: "Faster permit fulfillment", sub: "Fewer errors, fewer corrections." },
+              { value: "91%", label: "User satisfaction", sub: "Post-launch survey results." },
+              { value: "80%+", label: "First-time → repeat clients", sub: "Returning for a second permit." },
             ],
           },
         ],
@@ -948,41 +1019,65 @@ export const CASE_STUDIES: CaseStudy[] = [
       {
         id: "goals",
         label: "Goals & Challenges",
-        heading: "A wall of bureaucracy.",
+        heading: "What is Permit Puller?",
         blocks: [
           {
             type: "p",
-            text: "PermitPuller has been securing moving permits across US cities since 2004 — but the platform hadn't kept pace. A 22-field single-page form, zero progress feedback, and complete silence after you hit submit. A necessary service that felt like punishment.",
+            text: "Picture this. You're finally moving into the city, ten stories up with views in every direction. You've prepped the movers, planned the timeline, and just want to get your boxes inside.",
           },
           {
             type: "p",
-            text: "Submit your request, then just… wait. No confirmation, no timeline, no status. The mandate was simple: replace silence with clarity.",
+            text: "Moving day arrives. You head up to direct the team, then come back down to check on them. It's chaos.",
+          },
+          {
+            type: "p",
+            text: "Then you spot it: a fine for parking in a no-parking zone, tucked under the windshield wiper.",
+          },
+          {
+            type: "p",
+            text: "Permit Puller exists so that never happens. You handle the boxes. We handle the curb.",
           },
           {
             type: "image",
-            src: "/case-studies/pp-01.png",
-            alt: "Screenshot of the legacy PermitPuller single-page form",
-            caption: "Fig. 01 — A monolithic 22-field form with no grouping, no progress, and no feedback after submission.",
+            src: "/case-studies/pp/goals/pp-2022.png",
+            alt: "PermitPuller 2022 web experience",
+            caption: "The PermitPuller experience we inherited in 2022.",
+          },
+          { type: "h3", text: "The challenge" },
+          {
+            type: "p",
+            text: "The legacy system was a long, confusing form with no status updates after submit. People abandoned it constantly.",
           },
           { type: "h3", text: "Pain points" },
+          {
+            type: "p",
+            text: "One giant form. No feedback. No trust. We ran interviews, dug through support tickets, and watched session recordings. Two problems kept showing up.",
+          },
           {
             type: "list",
             marker: "x",
             items: [
-              "22+ field single-page form with no logical grouping",
-              "Users made frequent errors from misunderstood fields",
-              "Zero status communication after submission — users felt ghosted",
-              "High abandonment before form completion",
-              "Support team overwhelmed with status-check inquiries",
+              "The 📜 monolithic form caused constant mistakes: wrong permit type, missing info, unclear fields.",
+              "After submit, users felt 👻 ghosted. No confirmation, no status, no idea what came next.",
             ],
           },
-          { type: "h3", text: "Three objectives" },
           {
-            type: "objectives",
+            type: "conceptTabs",
             items: [
-              { emoji: "🎨", label: "Modernize", sub: "Refresh the brand with a new identity, modern illustrations, and a redesigned logo." },
-              { emoji: "🗂️", label: "Simplify", sub: "Break the monolithic form into a clear, step-by-step booking flow that guides users through each decision." },
-              { emoji: "📡", label: "Communicate", sub: "Build real-time status updates and SMS/email notifications into the core post-submission experience." },
+              {
+                src: "/case-studies/pp/goals/pain-point-1.gif",
+                alt: "Issue 01, monolithic single-page form",
+                label: "Issue 01 · Monolithic form",
+                tabLabel: "Issue 01",
+                description: "Every field lived on a single page. Users picked the wrong permit type, missed required info, and abandoned partway through with no way to recover.",
+              },
+              {
+                src: "/case-studies/pp/goals/pain-point-2.png",
+                alt: "Issue 02, ghosted after submit with no status",
+                label: "Issue 02 · Ghosted after submit",
+                tabLabel: "Issue 02",
+                description: "After submitting, users got radio silence. No confirmation, no status, no estimated turnaround. Many assumed the request never went through and re-submitted, or gave up entirely.",
+              },
             ],
           },
         ],
@@ -990,115 +1085,211 @@ export const CASE_STUDIES: CaseStudy[] = [
       {
         id: "research",
         label: "Research & Analysis",
-        heading: "Validating what we already suspected.",
+        eyebrow: "Research & analysis",
+        heading: "Drawing inspiration.",
         blocks: [
           {
             type: "p",
-            text: "Most permit services were still running on phone calls and email chains. But indirect competitors like HomeAdvisor had already cracked the step-by-step flow — and it worked.",
-          },
-          {
-            type: "statPills",
-            items: [
-              { value: "22+", label: "fields in legacy form" },
-              { value: "3", label: "personas defined" },
-              { value: "7d", label: "research sprint" },
-            ],
-          },
-          {
-            type: "image",
-            src: "/case-studies/pp-02.png",
-            alt: "Competitor analysis board for permit and booking services",
-            caption: "Fig. 02 — Mapping direct and indirect competitors surfaced the step-by-step flow as the clear benchmark.",
+            text: "Direct competitors all leaned the same way: phone-first. Express Permits, Permit Pushers, Suncoast Permits, all funneled users into \"Contact Us\" forms and call centers.",
           },
           {
             type: "p",
-            text: "The real issue wasn't the form. It was the silence after. People needed to know their request was in motion — not just that they'd clicked submit.",
+            text: "That meant fragmented communication and zero transparency. Suncoast led with a phone number front and center, pushing anyone who preferred digital straight back to the dial pad.",
+          },
+          {
+            type: "p",
+            text: "Permit Place and Burnham Nationwide were comprehensive but still phone-heavy. A clear opening for a digital-native experience.",
+          },
+          {
+            type: "ticker",
+            aspect: "27/25",
+            items: [
+              { src: "/case-studies/pp/research/comp-1.avif", alt: "Express Permits" },
+              { src: "/case-studies/pp/research/comp-2.avif", alt: "Permit Pushers" },
+              { src: "/case-studies/pp/research/comp-3.avif", alt: "Suncoast Permits" },
+              { src: "/case-studies/pp/research/comp-4.webp", alt: "Burnham Nationwide" },
+            ],
+          },
+          {
+            type: "p",
+            text: "So we looked at Angi and Thumbtack instead. Step-by-step flows, structured intake, less back-and-forth. That was the model.",
           },
         ],
       },
       {
         id: "strategy",
         label: "Strategy & Exploration",
-        heading: "Three principles. One direction.",
+        eyebrow: "strategy and exploration",
+        heading: "Simplify the flow. Clarify the pricing. Modernize the look.",
         blocks: [
           {
             type: "p",
-            text: "Three things to fix before touching a wireframe: refresh the brand, restructure the flow, and make a bureaucratic process feel like something a real person designed.",
+            text: "Three principles guided the redesign.",
           },
-          { type: "h3", text: "Mapping the new flow" },
+          { type: "h3", text: "A fully fresh perspective" },
           {
-            type: "statPills",
-            items: [
-              { value: "6", label: "drafted layouts" },
-              { value: "3d", label: "exploration sprint" },
-              { value: "5", label: "booking steps" },
-            ],
-          },
-          {
-            type: "imagePair",
-            items: [
-              { src: placeholder("Concept A · Progressive form", "#6366f1", "4/3"), label: "Concept A", caption: "Single-screen progressive disclosure — cleaner, but still one page." },
-              { src: placeholder("Concept B · Step-by-step flow", "#6366f1", "4/3"), label: "Concept B", caption: "Dedicated step flow — each screen asks only what's needed. Winner." },
-            ],
+            type: "p",
+            text: "Beyond the flow, we refreshed the brand and pulled the new UI into the growing PMG Design System.",
           },
           {
             type: "p",
-            text: "Location → Permit Type → Timeline → Add-ons → Checkout. One decision per screen. Pricing visible throughout, and a progress bar so you always know where you are.",
+            text: "New voice, new illustrations, new logo.",
+          },
+          {
+            type: "image",
+            src: "/case-studies/pp/strategy/strategy.png",
+            alt: "Brand refresh and layout exploration",
+            caption: "Layout exploration across the new flow.",
+          },
+          {
+            type: "image",
+            src: "/case-studies/pp/strategy/confirmation.png",
+            alt: "Confirmation screen exploration",
+            caption: "Confirmation drafts integrated into the PMG Design System.",
+          },
+          {
+            type: "statPills",
+            items: [
+              { value: "+6", label: "drafted layouts" },
+              { value: "3 days", label: "devoted to page exploration" },
+            ],
           },
         ],
       },
       {
         id: "ux",
         label: "UX/UI Design",
-        heading: "Five steps, zero surprises.",
+        eyebrow: "ui / ux design",
+        heading: "Easier, Faster, More Intuitive Permit Requests.",
         blocks: [
+          { type: "h3", text: "Step 1: Location" },
           {
             type: "p",
-            text: "Five steps instead of one wall. Each screen asks only what's needed right now — fewer errors, less confusion, and a completion rate that nearly doubled.",
+            text: "Drop a pin on the exact spot you need the permit for. Interactive map, no address fumbling.",
           },
           {
-            type: "statPills",
+            type: "image",
+            src: "/case-studies/pp/ux/location.png",
+            alt: "Step 1, location selection with interactive map",
+          },
+          { type: "h3", text: "Step 2 & 3: Permit Type and Details" },
+          {
+            type: "p",
+            text: "Pick from a curated list, mostly moving permits. Each card shows the fee and the lead time up front, so coordinating with movers stays simple.",
+          },
+          {
+            type: "carousel",
+            aspect: "16/10",
             items: [
-              { value: "38 → 80%", label: "completion rate" },
-              { value: "−40%", label: "support queries" },
-              { value: "18%", label: "faster fulfillment" },
+              { src: "/case-studies/pp/ux/permit.png", alt: "Permit type selection", caption: "Permit type" },
+              { src: "/case-studies/pp/ux/details.png", alt: "Permit details form", caption: "Permit details" },
+            ],
+          },
+          { type: "h3", text: "Step 3: Timeline" },
+          {
+            type: "p",
+            text: "Pick the date and time window. The permit lines up with the move, no guessing.",
+          },
+          {
+            type: "image",
+            src: "/case-studies/pp/ux/date.png",
+            alt: "Step 3, timeline selection",
+          },
+          { type: "h3", text: "Step 4: Add-ons" },
+          {
+            type: "p",
+            text: "A real differentiator. \"Verified Site Review\" checks compliance before the move. \"Permit Signage Removal\" handles posting and pulling down signs.",
+          },
+          {
+            type: "carousel",
+            aspect: "16/10",
+            items: [
+              { src: "/case-studies/pp/ux/add-ons.png", alt: "Add-ons step, primary view", caption: "Add-ons" },
+              { src: "/case-studies/pp/ux/add-ons-1.png", alt: "Add-ons step, detail view", caption: "Add-on detail" },
+            ],
+          },
+          { type: "h3", text: "Checkout" },
+          {
+            type: "p",
+            text: "Some permits charge upfront. Others, especially in new cities, need a quick screening first. Either way, users get a response within 24 hours with a clear next step.",
+          },
+          {
+            type: "image",
+            src: "/case-studies/pp/ux/confirmation.png",
+            alt: "Checkout step",
+          },
+          { type: "h3", text: "A unified, modern dashboard", mt: 48 },
+          {
+            type: "p",
+            text: "A status dashboard with real-time updates, plus SMS and email notifications. No more ghosting.",
+          },
+          {
+            type: "sectionBreak",
+            src: "/case-studies/pp/ux/dashboard.png",
+            alt: "Status dashboard with real-time updates and notifications",
+          },
+        ],
+      },
+      {
+        id: "accomplishments",
+        label: "Accomplishments",
+        eyebrow: "Accomplishments",
+        heading: "Easy to follow, step-by-step data collection flow.",
+        blocks: [
+          { type: "h3", text: "From anxiety to trust." },
+          {
+            type: "p",
+            text: "The work paid off.",
+          },
+          {
+            type: "list",
+            marker: "check",
+            items: [
+              "📈 Form completion rates climbed across the new flow",
+              "🏃 Permit fulfillment got 18% faster",
+              "👍 User satisfaction hit 91%",
             ],
           },
           {
             type: "image",
-            src: "/case-studies/pp-03.png",
-            alt: "Five-step PermitPuller booking flow",
-            caption: "Fig. 03 — Location → Permit Type → Timeline → Add-ons → Checkout. One decision per screen.",
+            src: "/case-studies/pp/accomplishments/accomplishments.avif",
+            alt: "PermitPuller results, step-by-step flow recap",
           },
-          { type: "h3", text: "Dashboard & status updates" },
           {
             type: "p",
-            text: "The post-submit experience got as much attention as the form. A status dashboard with real-time visibility, paired with SMS and email at each milestone. That alone cut 'where's my permit?' support tickets by 40%.",
+            text: "Over 80% of first-time clients came back for another permit. So we leaned in: pre-filled info, shorter flows, less friction every time. The second pull is effortless.",
+          },
+        ],
+      },
+      {
+        id: "timeline",
+        label: "Timeline",
+        eyebrow: "Years on PermitPuller",
+        heading: "Two years, one rebuild, a calmer way to pull a permit.",
+        blocks: [
+          {
+            type: "p",
+            text: "A look back: from inheriting the 2022 single-page form, through research and brand refresh, into the step-by-step flow and the status dashboard that closed the loop.",
           },
           {
             type: "image",
-            src: placeholder("Status dashboard · Notifications", "#6366f1", "16/9"),
-            alt: "PermitPuller status dashboard with notifications",
-            caption: "Fig. 04 — Real-time status updates and multi-channel notifications replaced silence with confidence.",
-          },
-          { type: "h3", text: "Brand refresh" },
-          {
-            type: "p",
-            text: "We updated the visual identity in parallel — modern illustrations, a new logo, a color system that projects confidence without going corporate. It should feel like someone who cares made it.",
+            src: "/case-studies/pp/timeline.png",
+            alt: "PermitPuller timeline, 2022 to 2024, research, brand refresh, and step-by-step flow",
           },
         ],
       },
     ],
     conclusion: {
-      quote: "PermitPuller proved that even the most bureaucratic process can be made intuitive. The 5-step flow didn't just reduce support queries — it changed how the team thought about what quality product looks like.",
-      body: "Designing for clarity inside a system this complex was a challenge I'd take on again without hesitation.",
-      signoff: "Thank you for reading!",
+      quote: "The work shown here is a snapshot of what we built at Porch Moving Group: the redesigned permit flow, the brand refresh, and the status dashboard, developed during my time there before I wrapped up in 2024.",
+      body: "Permit Puller is still live today at movingpermits.com, with the same step-by-step structure we shipped and only minor tweaks to the flow. We replaced silence with clarity, and turned a bureaucratic chore into something users could actually trust. Designing for clarity inside a system this complex is a challenge I'd take on again, every time.",
+      signoff: "Rodrigo Martínez · Porch Moving Group, 2022 to 2024",
     },
   },
   {
     id: "hdmn",
     homeGallery: false,
-    title: "New SMS Chat Feature For Phone Agents",
+    unavailable: true,
+    title: "New SMS chat feature for Phone Agents",
     shortTitle: "Hahdmin",
     company: "Porch Moving Group",
     year: "2021",
@@ -1110,34 +1301,51 @@ export const CASE_STUDIES: CaseStudy[] = [
     size: "small",
     metrics: [
       { label: "CSRs interviewed", value: "5" },
-      { label: "Days of research", value: "7" },
-      { label: "Support queries reduction", value: "Significant" },
+      { label: "Days devoted to study", value: "7" },
+      { label: "Journeys drafted", value: "+6" },
     ],
     overview:
-      "The Hahdmin dashboard required CSRs to juggle multiple tools for SMS, email, and calls — creating inefficiency and slow response times. We developed a unified chat feature integrating SMS and email directly into the existing platform, with a native notification system and color-coded conversation hierarchy for customers, movers, and agents.",
+      "Direct communication between Hahdmin Agents and customers throughout the booking process is crucial. The Hahdmin dashboard at Porch was a fragmented platform, requiring users (Customer Service Representatives) to navigate multiple tools for chat communication. This created inefficiency, confusion, and slow response times for agents, customers, and moving companies. To address these issues, our team developed a unified chat feature that integrated SMS and email directly into the existing system.",
     challenge:
-      "Agents had to switch between apps constantly, leading to delays and frustrated customers. The new SMS modal activates from existing CTAs throughout the dashboard and supports multiple simultaneous modals across different admin views.",
+      "Phone agents (CSRs) typically coordinate customers' moves using the Hahdmin dashboard — an in-house platform built to handle the logistics of moving and communicate with Porch partners & customers. However, our previous systems lacked direct SMS integration, which made it challenging to connect and share information.",
     tags: ["UX Design", "Internal Tools", "SMS", "Workflow"],
-    images: ["/case-studies/hdmn-01.png", "/case-studies/hdmn-02.png", "/case-studies/hdmn-03.png"],
-    url: "https://www.rodriwu.com/hdmn",
+    images: [],
+    url: "/case/hdmn",
     nextCaseId: "talitha",
     body: [
       {
         id: "snapshot",
         label: "Snapshot",
-        heading: "A small feature. A measurable shift.",
+        eyebrow: "Redesigning the Moving Experience",
+        heading: "New SMS chat feature for Phone Agents.",
         blocks: [
           {
             type: "p",
-            text: "Adding SMS to Hahdmin looked small on paper. Seven days of research with five CSRs showed the real scope: every agent had built their own workaround, and none of it lived in the system. One fix changed how the whole team worked.",
+            text: "Direct communication between Hahdmin Agents and customers throughout the booking process is crucial.",
+          },
+          {
+            type: "p",
+            text: "The Hahdmin dashboard at Porch was a fragmented platform, requiring users (Customer Service Representatives) to navigate multiple tools for chat communication. This created inefficiency, confusion, and slow response times for agents, customers, and moving companies.",
+          },
+          {
+            type: "p",
+            text: "To address these issues, our team developed a unified chat feature that integrated SMS and email directly into the existing system.",
+          },
+          {
+            type: "p",
+            text: "Through user interviews, rapid prototyping, and iterative feedback, we designed an intuitive interface with color-coded roles and real-time messaging. The new solution streamlined workflows, improved clarity, and enabled faster, more seamless communication for all users.",
+          },
+          {
+            type: "p",
+            text: "As a result, agents could manage conversations efficiently, customers received timely updates, and moving companies experienced better coordination, enhancing the overall moving experience.",
           },
           {
             type: "metricCards",
             items: [
               { value: "5", label: "CSRs interviewed", sub: "Every active agent on the team." },
-              { value: "7d", label: "Research sprint", sub: "Workflow study and journey mapping first." },
-              { value: "6+", label: "Journeys drafted", sub: "Flow variants stress-tested before high-fidelity." },
-              { value: "−40%", label: "Support query reduction", sub: "Agents stopped relaying context between apps." },
+              { value: "7 days", label: "Devoted to a detailed study", sub: "Workflow study and journey mapping." },
+              { value: "+6", label: "Drafted journeys", sub: "Flow variants stress-tested." },
+              { value: "3 days", label: "Page exploration", sub: "Lo-fi exploration sprint." },
             ],
           },
         ],
@@ -1145,179 +1353,626 @@ export const CASE_STUDIES: CaseStudy[] = [
       {
         id: "goals",
         label: "Goals & Challenges",
-        heading: "One dashboard. Twelve browser tabs.",
+        heading: "The challenge.",
         blocks: [
           {
             type: "p",
-            text: "Agent-to-customer communication was critical — but the platform wasn't built for it. SMS in iMessage, email in Gmail, calls on the phone. Context lived in agents' heads, not the system.",
-          },
-          {
-            type: "p",
-            text: "The cost was real: slow responses, lost context, frustrated customers, managers with no visibility. Agents were burning energy just switching between apps instead of actually helping people.",
+            text: "Phone agents (CSRs) typically coordinate customers' moves using the Hahdmin dashboard — an in-house platform built to handle the logistics of moving and communicate with Porch partners & customers. However, our previous systems lacked direct SMS integration, which made it challenging to connect and share information.",
           },
           {
             type: "image",
-            src: "/case-studies/hdmn-01.png",
+            src: placeholder("Legacy Hahdmin workflow", "#10b981", "16/9"),
             alt: "Legacy Hahdmin agent workflow using multiple external apps",
-            caption: "Fig. 01 — The pre-redesign workflow. SMS in iMessage, email in Gmail, notes copy-pasted between them.",
-          },
-          { type: "h3", text: "Pain points" },
-          {
-            type: "list",
-            marker: "x",
-            items: [
-              "Agents switched between 3+ external apps to manage customer communication",
-              "No centralized conversation history per booking",
-              "Critical context was lost between app switches",
-              "Customers received delayed or inconsistent responses",
-              "Dashboard felt overwhelming with no clear communication hub",
-            ],
-          },
-          { type: "h3", text: "Three objectives" },
-          {
-            type: "objectives",
-            items: [
-              { emoji: "🔗", label: "Unify", sub: "Bring SMS and email into the existing Hahdmin dashboard — no new tab required." },
-              { emoji: "🎨", label: "Clarify", sub: "Color-code conversations by role: customer, moving company, and agent each get a distinct thread." },
-              { emoji: "⚡", label: "Scale", sub: "Support multiple simultaneous open conversations across different bookings without losing context." },
-            ],
           },
         ],
       },
       {
-        id: "research",
-        label: "Research & Analysis",
-        heading: "Seven days, five conversations.",
+        id: "role",
+        label: "What is Hahdmin's role?",
+        heading: "What is Hahdmin's role?",
         blocks: [
           {
             type: "p",
-            text: "Spent a week studying how agents actually communicated — not how the process diagram said they should. Interviewed all five CSRs. The goal was to map what was really happening.",
+            text: "Hahdmin offers essential infrastructure and data collection services to ensure that moves operate seamlessly. It provides comprehensive information about quotes, movers, and clients, enabling customer service representatives to efficiently manage a high volume of logistics tickets daily, including delivering quotes via phone and email.",
+          },
+          {
+            type: "p",
+            text: "One crucial feature that was lacking is SMS functionality. This addition would simplify communication for everyone involved and save time by allowing parties to interact in a chat room, rather than relying on phone calls or emails.",
+          },
+          {
+            type: "image",
+            src: placeholder("Hahdmin dashboard overview", "#10b981", "16/9"),
+            alt: "Hahdmin dashboard — quotes, movers, and client information",
+          },
+        ],
+      },
+      {
+        id: "user-insights",
+        label: "User Insights",
+        eyebrow: "user insights",
+        heading: "Hahdmin Agents Needed Some Help.",
+        blocks: [
+          {
+            type: "p",
+            text: "We began by gathering insights from our agents to identify the main obstacles they faced and explore ways to simplify their workflow. It soon became clear that a complete overhaul of the Hahdmin framework wasn't feasible due to time and resource constraints, so we shifted our focus to enhancing the existing interface.",
+          },
+          {
+            type: "p",
+            text: "This meant addressing the distinct needs of various user groups — admins, supervisors, agents, customers, and movers who all interact with Hahdmin in different capacities. As we planned the integration of the new chat feature, we carefully considered how to introduce it smoothly while disrupting the overall user experience.",
           },
           {
             type: "statPills",
             items: [
-              { value: "7d", label: "research sprint" },
+              { value: "7 days", label: "devoted to a detailed study" },
               { value: "5", label: "CSRs interviewed" },
-              { value: "6+", label: "journeys drafted" },
             ],
           },
           {
-            type: "image",
-            src: "/case-studies/hdmn-02.png",
-            alt: "Agent workflow and journey mapping research board",
-            caption: "Fig. 02 — Mapping how agents actually communicated revealed a patchwork of workarounds no one had designed.",
+            type: "list",
+            marker: "x",
+            items: [
+              "The CSR dashboard itself at Hahdmin. It is overwhelming and not very user-friendly.",
+              "Agents had to jump between different apps to handle texts, emails, & calls, which is frustrating for customers.",
+            ],
           },
           {
             type: "p",
-            text: "Every agent had a different workaround. SMS in iMessage, email in Gmail, notes copy-pasted between them. The system had no visibility into any of it — and neither did their managers.",
+            text: "There was one major caveat: every six months, CSRs were required to learn entirely new tools for handling phone calls, emails, and texts, interrupting daily workflows and creating a frustrating experience for all parties. To make matters worse, the Hahdmin dashboard was overwhelming and not intuitive.",
+          },
+        ],
+      },
+      {
+        id: "market",
+        label: "Market Analysis",
+        eyebrow: "market analysis",
+        heading: "Market analysis.",
+        blocks: [
+          {
+            type: "p",
+            text: "We checked out how big companies handle their chat features and looked into some best practices to get a better grip on the micro interactions.",
+          },
+          {
+            type: "p",
+            text: "This assisted us in mapping and brainstorming our own processes, drawing on the insights of experts who had successfully tackled this challenge. We examined companies like Twilio, Textline and even Whatsapp which are renowned for their multi-party SMS communication features.",
+          },
+          {
+            type: "image",
+            src: placeholder("Market analysis · Twilio, Textline, Whatsapp", "#10b981", "16/9"),
+            alt: "Market analysis — Twilio, Textline, Whatsapp",
+          },
+          {
+            type: "p",
+            text: "It was crucial to note that Hahdmin was exclusively a desktop application designed for Customer Service Representatives. The only users who might have accessed it via mobile devices were customers and providers, but agents were not included.",
+          },
+          {
+            type: "statPills",
+            items: [
+              { value: "+6", label: "drafted journeys" },
+              { value: "3 days", label: "devoted to page exploration" },
+            ],
           },
         ],
       },
       {
         id: "strategy",
-        label: "Strategy & Findings",
-        heading: "The modal that opens everywhere.",
+        label: "Findings & Strategy",
+        eyebrow: "Findings & Strategy",
+        heading: "Lo-fi Explorations.",
         blocks: [
           {
             type: "p",
-            text: "The call wasn't to build a new communications hub. It was to inject conversation into the existing workflow. The SMS modal opens from existing CTAs throughout the dashboard — no context switching, no new tab.",
-          },
-          { type: "h3", text: "Color-coded roles" },
-          {
-            type: "p",
-            text: "Three participants, three color threads: customer, mover, agent. Multiple conversations open at once, and you always know who said what.",
-          },
-          {
-            type: "imagePair",
-            items: [
-              { src: placeholder("Concept A · Slide-over panel", "#10b981", "4/3"), label: "Concept A", caption: "Slide-over panel — preserves full dashboard visibility. Winner." },
-              { src: placeholder("Concept B · Floating overlay", "#10b981", "4/3"), label: "Concept B", caption: "Floating overlay — flexible but competed with dashboard content." },
-            ],
+            text: "After conducting multiple testing rounds with stakeholders and users, our initial sketches evolved into prototypes that outlined the path for integrating SMS messaging into the existing system. We implemented a scope board to help us prioritize the most relevant interactions, which was refined based on ongoing agent feedback.",
           },
           {
             type: "p",
-            text: "Plus a native notification system — messages come to Hahdmin, agents don't go looking for them.",
+            text: "To help users quickly identify conversation participants and their roles, we introduced color coding, creating a clear visual hierarchy among customers, movers, and agents. This approach clarified interactions and streamlined communication.",
+          },
+          {
+            type: "image",
+            src: placeholder("Lo-fi explorations · color-coded roles", "#10b981", "16/9"),
+            alt: "Lo-fi explorations with color-coded roles for customers, movers, and agents",
           },
         ],
       },
       {
         id: "ux",
         label: "UX/UI Design",
-        heading: "From sketches to shipped.",
+        eyebrow: "ui/ux design",
+        heading: "The Final Product.",
         blocks: [
           {
             type: "p",
-            text: "Lo-fi testing covered three modal configs: slide-over panel, floating overlay, inline expansion. The slide-over won — full dashboard still visible, conversation right in front of you.",
+            text: "After several rounds of feedback, we introduced our new chat feature flow, which seamlessly integrated not just SMS but also email into the Hahdmin platform, creating a centralized hub for all communications. This upgrade significantly enhanced the experience for agents, customers, and moving companies alike.",
           },
-          {
-            type: "statPills",
-            items: [
-              { value: "3", label: "modal configs tested" },
-              { value: "3d", label: "page exploration" },
-              { value: "1", label: "unified inbox" },
-            ],
-          },
-          {
-            type: "image",
-            src: "/case-studies/hdmn-03.png",
-            alt: "Lo-fi wireframe explorations of three SMS modal configurations",
-            caption: "Fig. 03 — Three modal configurations stress-tested against real agent workflows before committing to high-fidelity.",
-          },
-          {
-            type: "image",
-            src: placeholder("Final SMS modal · Color-coded roles", "#10b981", "16/9"),
-            alt: "Final Hahdmin SMS modal with color-coded conversation roles",
-            caption: "Fig. 04 — Customer, mover, and agent threads in distinct colors. Multiple conversations open simultaneously.",
-          },
-          { type: "h3", text: "Notifications" },
           {
             type: "p",
-            text: "A badge on an existing element doesn't sound like much. But the right notification at the right moment changed how the whole team worked — and how customers experienced the booking.",
+            text: "Agents wouldn't need to learn new platforms; rather, they would feel at home with our solution. We've integrated the same interactions from platforms they already use into the admin workflow. Additionally, we've introduced a communications modal to help agents communicate and have visibility of all events.",
           },
           {
-            type: "quote",
-            text: "What seems like a 'small' addition can have a huge impact when paired with the right logic and context.",
+            type: "image",
+            src: placeholder("Final chat feature · unified hub", "#10b981", "16/9"),
+            alt: "Final chat feature integrating SMS and email into Hahdmin",
+          },
+          { type: "h3", text: "New SMS Modal" },
+          {
+            type: "p",
+            text: "The main new feature is the new SMS modal, which is activated from various CTAs throughout the dashboard near contact information. It enables users to initiate SMS threads with any relevant parties added dynamically. Once conversations are started, the agent can view pertinent information on the contact panel on the right.",
+          },
+          {
+            type: "p",
+            text: "Another interesting feature is the native capability of maintaining several modals active even when the user navigates other admin dashboards. This allows agents more flexibility in managing logistics and improving communication.",
+          },
+          {
+            type: "image",
+            src: placeholder("New SMS modal · multi-modal support", "#10b981", "16/9"),
+            alt: "New SMS modal with multiple simultaneous conversations",
+          },
+          { type: "h3", text: "A notification system was implemented" },
+          {
+            type: "p",
+            text: "After integrating the SMS modal into Hahdmin, we introduced a native notification system to bring real-time message alerts directly into the platform. Historically, SMS conversations were monitored in separate third-party tools, forcing agents to juggle tabs and contexts. This update closed that gap.",
+          },
+          {
+            type: "p",
+            text: "Now, new messages and relevant communication events appear instantly in a dedicated notification panel within Hahdmin. The notification system follows a clear logic to keep information relevant and actionable. Not all events generate notifications. Only actions critical to an agent's workflow.",
+          },
+          {
+            type: "image",
+            src: placeholder("Notification system · dedicated panel", "#10b981", "16/9"),
+            alt: "Native notification system with dedicated panel in Hahdmin",
+          },
+          { type: "h3", text: "From Sketches to Prototypes" },
+          {
+            type: "p",
+            text: "Agents no longer juggled multiple tools. They managed conversations faster and more easily. Customers got quicker updates and better support. Movers coordinated more efficiently. Overall, communication became faster, clearer, and seamless for everyone. We focused on changes that fit within the existing system. We used rapid prototyping and constant feedback. Training helped agents adopt the new feature smoothly.",
+          },
+          {
+            type: "p",
+            text: "The final chat feature integrated SMS and email into Hahdmin. It became a central hub for all communication. By combining the new SMS modal with this intelligent notification logic, Hahdmin now delivers a unified, distraction-free experience where agents can stay on top of conversations and respond faster — all without leaving their main workspace.",
           },
         ],
       },
     ],
     conclusion: {
-      quote: "Hahdmin started as a tooling fix and became a lesson in how the right communication layer can change a team's entire pace. One modal, properly placed, rerouted how agents handled their whole day.",
-      body: "Sometimes the highest-impact design is the one that fits so naturally into the existing workflow that people forget it wasn't always there.",
-      signoff: "Thank you for reading!",
+      quote: "I realized that what seems like a \"small\" addition — in this case, a notification panel — can have a huge impact when paired with the right logic and context. The real challenge wasn't just displaying messages, but deciding which events truly matter.",
+      body: "By combining the new SMS modal with intelligent notification logic, Hahdmin now delivers a unified, distraction-free experience where agents can stay on top of conversations and respond faster — all without leaving their main workspace.",
+      signoff: "Rodrigo Martínez — UX Designer",
     },
   },
 
   {
     id: "hah",
-    title: "HireAHelper: Conversion Redesign",
+    title: "HireAHelper: Conversion ReDesign",
     shortTitle: "HireAHelper",
     company: "Porch Moving Group",
-    year: "2024 – 2025",
+    year: "2024 to 2025",
     role: "UX Design, Creative Direction",
     deliverables: "Optimized Experience, CMS Dev, Design System",
-    tagline: "From good to great.",
+    tagline: "Moving Simplified",
     cover: "/covers/hah.png",
+    coverCarousel: [
+      "/case-studies/hah/cover/1.png",
+      "/case-studies/hah/cover/2.png",
+      "/case-studies/hah/cover/3.png",
+      "/case-studies/hah/cover/4.png",
+      "/case-studies/hah/cover/5.png",
+      "/case-studies/hah/cover/6.png",
+      "/case-studies/hah/cover/7.png",
+      "/case-studies/hah/cover/8.png",
+      "/case-studies/hah/cover/9.png",
+      "/case-studies/hah/cover/10.png",
+      "/case-studies/hah/cover/11.png",
+      "/case-studies/hah/cover/12.png",
+    ],
     accent: "#0ea5e9",
     size: "wide",
     metrics: [
-      { label: "User interviews", value: "11" },
-      { label: "Interaction recordings", value: "200+" },
-      { label: "Competitors evaluated", value: "22" },
-      { label: "CMS landing pages", value: "14+" },
+      { label: "Daily Users", value: "14k" },
+      { label: "On Site Purchase", value: "39%" },
+      { label: "Revenue per visitor", value: "17%" },
+      { label: "Service Providers", value: "120k" },
     ],
     overview:
-      "HireAHelper has connected people with moving services across the US since 2015. After rapid growth, the platform needed a simpler, faster, more reliable experience. Through three iterative MVPs — from a marketplace redesign to a full booking funnel — we overhauled the UI, rebuilt the design system on Tailwind/Flowbite, and revamped checkout from a simple modal to a comprehensive summary with multiple payment options.",
+      "A multi-year redesign of HireAHelper's booking experience, going from a confusing marketplace into a faster, friendlier flow that helps people find movers without losing their minds.",
     challenge:
-      "Users expressed confusion over filters, criticized the outdated visual style (unchanged since 2017), and found the booking process unnecessarily long. The value proposition failed to resonate with user expectations.",
+      "The site looked dated, filters confused people, and the checkout dragged on. Conversion was leaking everywhere. We had to make it feel modern, fast, and trustworthy, without breaking what already worked.",
     tags: ["UX Design", "Creative Direction", "Design System", "Conversion"],
-    images: ["/case-studies/hah-01.png", "/case-studies/hah-02.png", "/case-studies/hah-03.png", "/case-studies/hah-04.png"],
-    url: "https://www.behance.net/gallery/228809041/HireAHelper-UI-UX",
-    external: true,
+    images: [],
+    url: "/case/hah",
+    body: [
+      {
+        id: "snapshot",
+        label: "Snapshot",
+        heading: "Moving Simplified.",
+        blocks: [
+          {
+            type: "p",
+            text: "HireAHelper had outgrown its own site. The platform was working, but as traffic grew so did the friction: confusing filters, a long checkout, a visual style stuck in 2017. My job was to rebuild the booking experience into something people actually wanted to use.",
+          },
+          {
+            type: "p",
+            text: "Over three MVPs, we untangled the funnel, modernized the look, and shipped a design system that let the team move faster without breaking the brand. The numbers followed: higher conversion, more revenue per visitor, and a smoother ride from search to checkout.",
+          },
+          {
+            type: "metricCards",
+            items: [
+              { value: "14,000", label: "Daily Users" },
+              { value: "39%", label: "On Site Purchase" },
+              { value: "17%", label: "Revenue per visitor" },
+              { value: "120k", label: "Service Providers" },
+            ],
+          },
+        ],
+      },
+      {
+        id: "goals",
+        label: "Goals & Challenges",
+        heading: "Design a smoother, faster way to book movers online.",
+        blocks: [
+          {
+            type: "p",
+            text: "HireAHelper has been connecting people with movers across the US since 2015, one of the originals in online mover booking. After seven years of growth, the site that got them here wasn't the site that would take them further.",
+          },
+          {
+            type: "image",
+            src: "/case-studies/hah/goals/hah-2022.gif",
+            alt: "HireAHelper 2022 web experience",
+            caption: "The HAH experience we inherited in 2022.",
+          },
+          { type: "h3", text: "The challenge" },
+          {
+            type: "p",
+            text: "Users were frustrated. Filters confused them, the checkout dragged, and the brand looked stuck a few years behind. The value prop wasn't landing either. We needed to make the whole thing feel modern, fast, and trustworthy, without losing the users we already had.",
+          },
+          { type: "h3", text: "Three objectives" },
+          {
+            type: "objectives",
+            items: [
+              { emoji: "🙋‍♀️", label: "UX", sub: "Build a platform that actually feels easy to use: usable, trustworthy, satisfying." },
+              { emoji: "🎯", label: "Business", sub: "Grow market share by bringing in new users and keeping the ones we have." },
+              { emoji: "⭐", label: "Macro", sub: "Cement HAH as the go-to platform for booking moving services online." },
+            ],
+          },
+          { type: "h3", text: "Pain points" },
+          {
+            type: "p",
+            text: "Before redesigning anything, we needed to see exactly where the experience was breaking down. So we talked to people (stakeholders, customer service reps, movers, real customers) and watched how they actually used the site.",
+          },
+          {
+            type: "p",
+            text: "Pair that with a heuristic audit, and the patterns showed up fast.",
+          },
+          {
+            type: "statPills",
+            items: [
+              { value: "11", label: "in-depth user interviews" },
+              { value: "+200", label: "interaction recordings" },
+            ],
+          },
+          {
+            type: "list",
+            marker: "x",
+            items: [
+              "Checkout felt overwhelming, even for simple services.",
+              "The visual language hadn't moved since 2017, and engagement and trust were taking the hit.",
+              "Search felt rigid: users had almost no way to customize their criteria.",
+              "Filters were too technical, making it hard to actually narrow things down.",
+            ],
+          },
+          {
+            type: "conceptTabs",
+            items: [
+              {
+                src: "/case-studies/hah/goals/pain-point-1.gif",
+                alt: "Issue 01, Overwhelming checkout flow",
+                label: "Issue 01 · Overwhelming checkout",
+                tabLabel: "Issue 01",
+                description: "Even simple bookings dragged users through a heavy confirmation flow, with too many steps for the size of the job.",
+              },
+              {
+                src: "/case-studies/hah/goals/pain-point-2.gif",
+                alt: "Issue 02, Technical filters and rigid search",
+                label: "Issue 02 · Filters that fought back",
+                tabLabel: "Issue 02",
+                description: "Search criteria were rigid and the filters spoke ops-language, not user-language, making it hard to narrow down to the right mover.",
+              },
+            ],
+          },
+        ],
+      },
+      {
+        id: "research",
+        label: "Research",
+        eyebrow: "Research & analysis",
+        heading: "Research & analysis.",
+        blocks: [
+          {
+            type: "p",
+            text: "From the interviews, a clear persona emerged, and with it a real picture of where people got stuck, where they bounced, and where the experience could actually win them over.",
+          },
+          {
+            type: "image",
+            src: "/case-studies/hah/research/personas.avif",
+            alt: "HAH user persona and research findings",
+            caption: "Persona work distilled from the interviews and usability sessions.",
+          },
+          {
+            type: "p",
+            text: "With our own customers mapped, we looked outward, studying how the rest of the industry handled booking.",
+          },
+          {
+            type: "p",
+            text: "Early on, the plan was to model HAH after an e-commerce marketplace: browse, compare, book, like a vacation rental. But the deeper we went into both our competitors and our own service model, the clearer it became: our value prop didn't quite fit that shape.",
+          },
+          {
+            type: "ticker",
+            aspect: "27/25",
+            items: [
+              { src: "/case-studies/hah/research/competitors/com-1.png", alt: "Competitor 01" },
+              { src: "/case-studies/hah/research/competitors/com-2.png", alt: "Competitor 02" },
+              { src: "/case-studies/hah/research/competitors/com-3.png", alt: "Competitor 03" },
+              { src: "/case-studies/hah/research/competitors/com-4.png", alt: "Competitor 04" },
+              { src: "/case-studies/hah/research/competitors/com-5.png", alt: "Competitor 05" },
+              { src: "/case-studies/hah/research/competitors/com-6.png", alt: "Competitor 06" },
+              { src: "/case-studies/hah/research/competitors/com-7.png", alt: "Competitor 07" },
+            ],
+          },
+          {
+            type: "statPills",
+            items: [
+              { value: "22", label: "competitors evaluated end to end" },
+              { value: "8 days", label: "of focused competitive study" },
+            ],
+          },
+        ],
+      },
+      {
+        id: "mvp1",
+        label: "First MVP",
+        eyebrow: "1st mvp",
+        heading: "Putting ideas into action, 2022.",
+        blocks: [
+          {
+            type: "p",
+            text: "Rather than rebuild everything at once, we picked our highest-traffic landing pages (the geo pages) and started testing. Each variation swapped a different version of the CTA form. A few months in, we had real data telling us which directions were working.",
+          },
+          {
+            type: "conceptTabs",
+            items: [
+              {
+                src: "/case-studies/hah/mvp1/example-1.avif",
+                alt: "MVP1 experiment 01, original CTA form variation",
+                label: "Variation 01 · Original CTA",
+                tabLabel: "Variation 01",
+                description: "The baseline CTA form on the geo landing pages: long, vertical, ZIP-first.",
+              },
+              {
+                src: "/case-studies/hah/mvp1/example-2.avif",
+                alt: "MVP1 experiment 02, condensed CTA layout",
+                label: "Variation 02 · Condensed layout",
+                tabLabel: "Variation 02",
+                description: "Trimmed the form to its essentials and tightened the visual hierarchy around the primary action.",
+              },
+              {
+                src: "/case-studies/hah/mvp1/example-3.avif",
+                alt: "MVP1 experiment 03, winning CTA variation",
+                label: "Variation 03 · Winner",
+                tabLabel: "Variation 03",
+                description: "The variation that converted best: clearer headline, lighter form, stronger CTA, shipped to the geo pages.",
+                winner: true,
+              },
+            ],
+          },
+          {
+            type: "list",
+            marker: "check",
+            items: [
+              "Started small, testing surgical CTA changes before reimagining anything bigger.",
+            ],
+          },
+          {
+            type: "list",
+            marker: "x",
+            items: [
+              "The new CTAs worked, but the rest of the site still felt dated and disengaging.",
+            ],
+          },
+        ],
+      },
+      {
+        id: "mvp2",
+        label: "Second MVP",
+        eyebrow: "2nd mvp",
+        heading: "The turning point, 2023 to 2024.",
+        blocks: [
+          {
+            type: "p",
+            text: "By 2023, it was clear HAH wasn't just a marketplace anymore. So we leaned into that, introducing service cards on the homepage, cleaning up the marketplace UI, and shifting the primary brand color from green to blue to feel more trustworthy.",
+          },
+          {
+            type: "p",
+            text: "That kicked off a new step-by-step conversion funnel. We A/B tested everything to make sure conversion held steady while we evolved the experience underneath.",
+          },
+          {
+            type: "devicePair",
+            desktop: { src: "/case-studies/hah/mvp2/desktop.webp", alt: "MVP2 desktop, refreshed marketplace with service cards" },
+            mobile:  { src: "/case-studies/hah/mvp2/mobile.gif",   alt: "MVP2 mobile, new step-by-step funnel" },
+            caption: "MVP2: refreshed marketplace, new funnel, blue brand color.",
+          },
+          {
+            type: "list",
+            marker: "check",
+            items: [
+              "Added a step to collect more context up front, so results actually matched what users needed.",
+            ],
+          },
+          {
+            type: "list",
+            marker: "x",
+            items: [
+              "The new design performed better, but the form step was still too long.",
+            ],
+          },
+        ],
+      },
+      {
+        id: "mvp3",
+        label: "Latest Upgrades",
+        eyebrow: "3rd mvp",
+        heading: "The latest upgrades.",
+        blocks: [
+          {
+            type: "p",
+            text: "Now we're rolling out a more detailed but intuitive booking flow, closer to what our competitors offer, but with HAH as the primary partner instead of a third-party broker. Porch handles quotes and the move itself, end-to-end.",
+          },
+          {
+            type: "list",
+            marker: "check",
+            items: [
+              "Rebuilt checkout from scratch: what used to be a card-details modal is now a full summary with schedule, options, and clear payment paths.",
+            ],
+          },
+          {
+            type: "image",
+            src: "/case-studies/hah/mvp3/example-1.webp",
+            alt: "MVP3, latest checkout and booking flow",
+            caption: "MVP3: comprehensive summary, schedule, and multiple payment options.",
+            frame: "#2B73DE",
+            frameBleed: true,
+          },
+          {
+            type: "p",
+            text: "MVP2 tightened up the funnel by clarifying visual hierarchy and surfacing the move summary up front. But users still had to pick a mover themselves.",
+          },
+          {
+            type: "p",
+            text: "In MVP3, the funnel grew up: surfacing multiple quotes quickly and letting users customize the rest of their move, not just the mover. Personalized, but still a marketplace underneath.",
+          },
+          {
+            type: "p",
+            text: "The shift: less \"browse a directory,\" more \"here are the best options for you.\" HAH's algorithm, refined over years of customer data, does the heavy lifting on the pre-selection.",
+          },
+          {
+            type: "image",
+            src: "/case-studies/hah/mvp3/booking-diagram.png",
+            alt: "MVP3 booking funnel diagram, full quote-driven flow",
+            caption: "Full MVP3 booking diagram: from intake through quotes to confirmation.",
+            frame: "#ffffff",
+          },
+          {
+            type: "sectionBreak",
+            src: "/case-studies/hah/mvp3/big-visual-break.png",
+            alt: "HireAHelper MVP3, visual recap across desktop and mobile",
+          },
+          {
+            type: "h3",
+            text: "Save Quote: pick up where you left off.",
+          },
+          {
+            type: "p",
+            text: "Users can save a quote at any step and get it emailed back, so they can come back later without losing progress.",
+          },
+          {
+            type: "image",
+            src: "/case-studies/hah/mvp3/save-quote.png",
+            alt: "MVP3 Save Quote, confirmation screen plus emailed quote summary",
+            caption: "Save Quote: confirmation, emailed summary, and a route back into the dashboard.",
+          },
+          {
+            type: "h3",
+            text: "Browse Movers: still a marketplace, just smarter.",
+          },
+          {
+            type: "p",
+            text: "The marketplace is still there. The algorithm pre-selects the best mover by default, but users can swap, compare reviews, and pick a different one at any time.",
+          },
+          {
+            type: "image",
+            src: "/case-studies/hah/mvp3/browse-movers.png",
+            alt: "MVP3 Browse Movers, alternate movers, reviews, and selection",
+            caption: "Browse Movers: alternate providers, full reviews, and one-tap re-selection.",
+          },
+        ],
+      },
+      {
+        id: "cms",
+        label: "CMS & Design System",
+        eyebrow: "CMS & Design System",
+        heading: "A fresh look & improved user experience.",
+        blocks: [
+          {
+            type: "p",
+            text: "After enough rounds of testing, we built a proper design system for HAH, sitting on top of Bootstrap, powered by Flowbite. It gave the team a consistent, accessible foundation, and let us ship faster without breaking the brand every other sprint.",
+          },
+          {
+            type: "p",
+            text: "In parallel, we revamped the landing-page layer: A/B tested the geo pages, the homepage, the service pages, anywhere conversion was at stake. (Worthy of its own case study, honestly.)",
+          },
+          {
+            type: "statPills",
+            items: [
+              { value: "+14", label: "CMS-level landing pages" },
+              { value: "Tailwind", label: "based components" },
+            ],
+          },
+          {
+            type: "image",
+            src: "/case-studies/hah/cms/design-system.avif",
+            alt: "HAH design system: colors, type, components, and page templates",
+            caption: "The HAH design system: colors, type, components, and page templates, all in one place.",
+          },
+          {
+            type: "imagePair",
+            items: [
+              {
+                src: "/case-studies/hah/cms/landing-page.avif",
+                alt: "HAH CMS landing page, responsive iPad mockup",
+              },
+              {
+                src: "/case-studies/hah/cms/design-library.avif",
+                alt: "HAH Design Library 2024, Porch Moving Group & HireAHelper",
+              },
+            ],
+          },
+          {
+            type: "p",
+            text: "HAH keeps evolving: flows shift, layouts change, the work continues. I wrapped up at Porch in August 2025, so this case study is a snapshot of the years I was part of it.",
+          },
+          {
+            type: "externalLink",
+            description: "More HAH UI/UX work on Behance",
+            label: "view publication",
+            href: "https://www.behance.net/gallery/228809041/HireAHelper-UI-UX",
+          },
+        ],
+      },
+      {
+        id: "timeline",
+        label: "Timeline",
+        eyebrow: "Years at HAH",
+        heading: "Four years, three MVPs, one design system.",
+        blocks: [
+          {
+            type: "p",
+            text: "A look back at the journey: from inheriting the green-era marketplace in 2022, through the blue-era funnel rebuild, into the quote-driven MVP3 and the design system that tied it all together.",
+          },
+          {
+            type: "image",
+            src: "/case-studies/hah/timeline.png",
+            alt: "HireAHelper timeline, 2022 to 2025, three MVPs, brand refresh, and design system",
+          },
+        ],
+      },
+    ],
+    conclusion: {
+      quote: "The work shown here is a snapshot of what we built at Porch Moving Group: three MVPs of the booking flow, the brand refresh, and the design system that powered HAH, developed during my years there before I wrapped up in August 2025.",
+      body: "Since then, HAH has continued to evolve under new management and taken a different direction. What you see here reflects the design decisions, tradeoffs, and systems I was responsible for during that era, from the green-era marketplace through the blue-era funnel, into the quote-driven MVP3. I'm proud of what the team shipped.",
+      signoff: "Rodrigo Martínez · Porch Moving Group, 2022 to 2025",
+    },
   },
   {
     id: "ruttis",
-    title: "Ruttis — A Candyshop Brand",
+    title: "Ruttis, A Candyshop Brand",
     shortTitle: "Ruttis",
     company: "Ruttis",
     year: "2021",
@@ -1333,12 +1988,61 @@ export const CASE_STUDIES: CaseStudy[] = [
       { label: "Launch", value: "2021" },
     ],
     overview:
-      "Ruttis is a candy shop that wanted a brand with playfulness baked in but enough discipline to grow into a small product line. I designed the mark, the wrappers, and the in-store signage — keeping the palette tight so new flavors could be added without ever needing a rebrand.",
-    challenge:
-      "Candy branding tends to either chase nostalgia or shout for kids' attention. Ruttis wanted to sit between — something a grown-up would buy for themselves, something a child would still find irresistible.",
+      "Brand identity and packaging for a small-batch candy shop. Full project on Behance.",
+    challenge: "",
     tags: ["Brand", "Illustration", "Packaging"],
     images: [],
     url: "https://www.behance.net/gallery/170035285/Dulceria-Ruttis-Branding",
+    external: true,
+  },
+  {
+    id: "skincare-junkie",
+    homeGallery: false,
+    title: "Skincare Junkie · Campaigns 2025 by Omni Common",
+    shortTitle: "Skincare Junkie",
+    company: "Omni Common",
+    year: "2025",
+    role: "Creative Direction, Art Direction",
+    deliverables: "Campaign Art Direction, Social Assets",
+    tagline: "Campaigns 2025.",
+    cover: "/covers/skincare-junkie.png",
+    accent: "#f472b6",
+    size: "small",
+    metrics: [
+      { label: "Campaigns", value: "Series" },
+      { label: "Year", value: "2025" },
+    ],
+    overview:
+      "Campaign art direction and social assets for Skincare Junkie. Full project on Behance.",
+    challenge: "",
+    tags: ["Campaign", "Art Direction", "Social"],
+    images: [],
+    url: "https://www.behance.net/gallery/242050641/Skincare-Junkie-Campaigns-2025-by-OC",
+    external: true,
+  },
+  {
+    id: "squeedr",
+    homeGallery: false,
+    title: "Squeedr · Branding",
+    shortTitle: "Squeedr",
+    company: "Squeedr",
+    year: "2023",
+    role: "Brand Design",
+    deliverables: "Brand Identity",
+    tagline: "Brand identity.",
+    cover: "/covers/squeedr.png",
+    accent: "#22d3ee",
+    size: "small",
+    metrics: [
+      { label: "Deliverable", value: "Identity" },
+      { label: "Year", value: "2023" },
+    ],
+    overview:
+      "Brand identity for Squeedr. Full project on Behance.",
+    challenge: "",
+    tags: ["Brand", "Identity"],
+    images: [],
+    url: "https://www.behance.net/gallery/184563123/Squeedr-Branding",
     external: true,
   },
 ];

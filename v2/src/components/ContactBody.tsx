@@ -7,21 +7,27 @@ import { useShell } from "./context/ShellContext";
 
 type Status = "idle" | "sending" | "sent" | "error";
 
+const EMAIL_RE = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+
 const T = {
   en: {
     formHeader: "SEND A MESSAGE",
-    name: "Name", email: "Email", message: "Message",
+    firstName: "First name", lastName: "Last name",
+    email: "Email", message: "Message",
     send: "Send message", sending: "Sending…",
     sent: "Message sent. I'll get back to you soon.",
     error: "Something went wrong. Try rodriwuu@gmail.com.",
+    invalidEmail: "Please enter a valid email (or leave blank).",
     reachAt: "REACH ME AT",
   },
   es: {
     formHeader: "ENVIAR MENSAJE",
-    name: "Nombre", email: "Correo", message: "Mensaje",
+    firstName: "Nombre", lastName: "Apellido",
+    email: "Correo", message: "Mensaje",
     send: "Enviar mensaje", sending: "Enviando…",
     sent: "Mensaje enviado. Te responderé pronto.",
     error: "Algo salió mal. Escríbeme a rodriwuu@gmail.com.",
+    invalidEmail: "Introduce un correo válido (o déjalo vacío).",
     reachAt: "ENCUÉNTRAME",
   },
 };
@@ -42,11 +48,16 @@ const LINKS = [
 export default function ContactBody() {
   const { isDark, locale } = useShell();
   const t = T[locale];
-  const [name, setName] = useState("");
+  const [firstName, setFirstName] = useState("");
+  const [lastName, setLastName] = useState("");
   const [email, setEmail] = useState("");
   const [message, setMessage] = useState("");
+  const [company, setCompany] = useState("");
   const [status, setStatus] = useState<Status>("idle");
+  const [errorMsg, setErrorMsg] = useState<string | null>(null);
   const [focused, setFocused] = useState<string | null>(null);
+
+  const emailValid = !email.trim() || EMAIL_RE.test(email.trim());
 
   const ink   = isDark ? "rgba(255,255,255,0.94)" : "rgba(10,12,35,0.92)";
   const body  = isDark ? "rgba(255,255,255,0.62)" : "rgba(10,12,35,0.76)";
@@ -56,22 +67,30 @@ export default function ContactBody() {
   const fieldBg = isDark ? "rgba(255,255,255,0.025)" : "rgba(0,0,0,0.022)";
 
   const submit = async () => {
-    if (!message.trim() || status === "sending") return;
+    if (!message.trim() || status === "sending" || !emailValid) return;
     setStatus("sending");
+    setErrorMsg(null);
     try {
+      const name = `${firstName.trim()} ${lastName.trim()}`.trim();
       const res = await fetch("/api/contact", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ name, email, message }),
+        body: JSON.stringify({ name, email, message, company }),
       });
-      setStatus(res.ok ? "sent" : "error");
-      if (res.ok) { setName(""); setEmail(""); setMessage(""); }
+      if (res.ok) {
+        setStatus("sent");
+        setFirstName(""); setLastName(""); setEmail(""); setMessage(""); setCompany("");
+      } else {
+        const data = await res.json().catch(() => ({}));
+        setErrorMsg(typeof data?.error === "string" ? data.error : null);
+        setStatus("error");
+      }
     } catch {
       setStatus("error");
     }
   };
 
-  const canSend = message.trim().length > 0 && status !== "sending" && status !== "sent";
+  const canSend = message.trim().length > 0 && emailValid && status !== "sending" && status !== "sent";
 
   const inputStyle = (id: string): React.CSSProperties => ({
     width: "100%", fontSize: 14, color: ink, background: "transparent",
@@ -84,7 +103,7 @@ export default function ContactBody() {
   return (
     <div style={{ display: "flex", flexDirection: "column", gap: 28 }}>
       <div>
-        <p className="font-mono" style={{ fontSize: 10, letterSpacing: "0.14em", color: dim, marginBottom: 14 }}>
+        <p className="font-mono" style={{ fontSize: 12, letterSpacing: "0.18em", color: body, fontWeight: 500, marginBottom: 22 }}>
           {t.formHeader}
         </p>
 
@@ -99,11 +118,18 @@ export default function ContactBody() {
           </motion.div>
         ) : (
           <>
+            {/* honeypot — hidden from humans, visible to bots */}
+            <div aria-hidden="true" style={{ position: "absolute", left: "-9999px", width: 1, height: 1, overflow: "hidden" }}>
+              <label htmlFor="company">Company</label>
+              <input id="company" name="company" type="text" tabIndex={-1} autoComplete="off"
+                value={company} onChange={e => setCompany(e.target.value)} />
+            </div>
+
             <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 18, marginBottom: 22 }}>
               {[
-                { id: "name",  label: t.name,  value: name,  set: setName,  type: "text" },
-                { id: "email", label: t.email, value: email, set: setEmail, type: "email" },
-              ].map(({ id, label, value, set, type }) => (
+                { id: "firstName", label: t.firstName, value: firstName, set: setFirstName, type: "text",  autoComplete: "given-name" },
+                { id: "lastName",  label: t.lastName,  value: lastName,  set: setLastName,  type: "text",  autoComplete: "family-name" },
+              ].map(({ id, label, value, set, type, autoComplete }) => (
                 <div key={id}>
                   <label htmlFor={id} className="font-mono" style={{
                     display: "block", fontSize: 10, letterSpacing: "0.12em",
@@ -111,7 +137,7 @@ export default function ContactBody() {
                   }}>
                     {label.toUpperCase()}
                   </label>
-                  <input id={id} type={type} value={value}
+                  <input id={id} type={type} value={value} autoComplete={autoComplete}
                     onChange={e => set(e.target.value)}
                     onFocus={() => setFocused(id)}
                     onBlur={() => setFocused(null)}
@@ -119,6 +145,21 @@ export default function ContactBody() {
                   />
                 </div>
               ))}
+            </div>
+
+            <div style={{ marginBottom: 22 }}>
+              <label htmlFor="email" className="font-mono" style={{
+                display: "block", fontSize: 10, letterSpacing: "0.12em",
+                color: focused === "email" ? focus : dim, marginBottom: 8, transition: "color 0.2s ease",
+              }}>
+                {t.email.toUpperCase()}
+              </label>
+              <input id="email" type="email" value={email} autoComplete="email"
+                onChange={e => setEmail(e.target.value)}
+                onFocus={() => setFocused("email")}
+                onBlur={() => setFocused(null)}
+                style={inputStyle("email")}
+              />
             </div>
 
             <div style={{ marginBottom: 22 }}>
@@ -144,10 +185,17 @@ export default function ContactBody() {
               />
             </div>
 
+            {!emailValid && (
+              <div style={{ display: "flex", alignItems: "center", gap: 8, marginBottom: 14 }}>
+                <AlertCircle size={13} strokeWidth={1.5} style={{ color: "rgba(255,170,60,0.85)", flexShrink: 0 }} />
+                <span className="font-mono" style={{ fontSize: 10, color: "rgba(255,170,60,0.9)" }}>{t.invalidEmail}</span>
+              </div>
+            )}
+
             {status === "error" && (
               <div style={{ display: "flex", alignItems: "center", gap: 8, marginBottom: 14 }}>
                 <AlertCircle size={13} strokeWidth={1.5} style={{ color: "rgba(255,90,80,0.8)", flexShrink: 0 }} />
-                <span className="font-mono" style={{ fontSize: 10, color: "rgba(255,90,80,0.85)" }}>{t.error}</span>
+                <span className="font-mono" style={{ fontSize: 10, color: "rgba(255,90,80,0.85)" }}>{errorMsg || t.error}</span>
               </div>
             )}
 
@@ -175,7 +223,7 @@ export default function ContactBody() {
 
       {/* Reach me — quick links */}
       <div>
-        <p className="font-mono" style={{ fontSize: 10, letterSpacing: "0.14em", color: dim, marginBottom: 12 }}>
+        <p className="font-mono" style={{ fontSize: 12, letterSpacing: "0.18em", color: body, fontWeight: 500, marginBottom: 18 }}>
           {t.reachAt}
         </p>
         <div style={{ display: "grid", gridTemplateColumns: "repeat(2, 1fr)", gap: 8 }}>

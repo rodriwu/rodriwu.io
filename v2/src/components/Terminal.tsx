@@ -16,7 +16,7 @@ const isLink = (l: Line): l is LinkLine => typeof l === "object";
 function renderTextLine(line: string): React.ReactNode {
   if (line === "") return " ";
 
-  if (line.startsWith("rodriwu.io")) {
+  if (line.startsWith("rodriwu.com")) {
     const [brand, ...rest] = line.split(" — ");
     return (
       <>
@@ -141,7 +141,7 @@ type AskStep =
 /* ── Translations ── */
 const T = {
   en: {
-    banner:      "rodriwu.io v2.0 — rodriwu@desktop",
+    banner:      "rodriwu.com v2.0 — rodriwu@desktop",
     hint:        "Type 'help' for commands. Press \\` to toggle.",
     help: [
       "Available commands:",
@@ -202,7 +202,7 @@ const T = {
     notFound:    "command not found:",
   },
   es: {
-    banner:      "rodriwu.io v2.0 — rodriwu@escritorio",
+    banner:      "rodriwu.com v2.0 — rodriwu@escritorio",
     hint:        "Escribe 'help' para los comandos. Presiona \\` para alternar.",
     help: [
       "Comandos disponibles:",

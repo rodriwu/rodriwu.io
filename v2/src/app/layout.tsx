@@ -4,7 +4,7 @@ import Shell from "@/components/Shell";
 import "./globals.css";
 
 export const metadata: Metadata = {
-  title: "rodriwu.io",
+  title: "rodriwu.com",
   description: "Rodrigo Martínez — Designer · Portfolio",
 };
 

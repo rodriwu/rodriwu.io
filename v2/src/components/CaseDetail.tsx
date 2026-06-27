@@ -17,8 +17,8 @@ export default function CaseDetail({ cs }: { cs: CaseStudy }) {
 
   const accent = isDark ? "#CFF24A" : "#7B5CF6";
   const ink    = isDark ? "rgba(255,255,255,0.94)" : "rgba(10,12,35,0.92)";
-  const body   = isDark ? "rgba(255,255,255,0.66)" : "rgba(10,12,35,0.62)";
-  const dim    = isDark ? "rgba(255,255,255,0.40)" : "rgba(10,12,35,0.42)";
+  const body   = isDark ? "rgba(255,255,255,0.66)" : "rgba(10,12,35,0.78)";
+  const dim    = isDark ? "rgba(255,255,255,0.40)" : "rgba(10,12,35,0.58)";
   const fade   = isDark ? "rgba(255,255,255,0.10)" : "rgba(10,12,35,0.12)";
   const cardBg = isDark ? "rgba(255,255,255,0.025)" : "rgba(0,0,0,0.022)";
 
@@ -181,7 +181,7 @@ function Hero({
   }, []);
 
   const metaFields = [
-    { label: "Client",       value: cs.company },
+    { label: "Client",       value: cs.shortTitle },
     { label: "Engagement",   value: cs.year },
     { label: "Role",         value: cs.role },
     { label: "Deliverables", value: cs.deliverables },
@@ -211,14 +211,19 @@ function Hero({
           lineHeight: 1.04,
           letterSpacing: "-0.04em",
           marginBottom: isMobile ? 28 : 56,
-          maxWidth: 960,
+          maxWidth: 1200,
+          textWrap: "balance",
         }}
       >
         {cs.title}
       </motion.h1>
 
       {/* Cover */}
-      <div style={isMobile ? { width: "100%" } : {
+      <div style={isMobile ? {
+        width: "100vw",
+        marginLeft: "calc(50% - 50vw)",
+        marginRight: "calc(50% - 50vw)",
+      } : {
         width: "calc(100vw - var(--rw-sidebar))",
         marginLeft: "calc((100vw - var(--rw-sidebar) - 100%) / -2)",
         marginRight: "calc((100vw - var(--rw-sidebar) - 100%) / -2)",
@@ -231,7 +236,7 @@ function Hero({
           {cs.coverCarousel && cs.coverCarousel.length > 1 ? (
             <CoverCarousel images={cs.coverCarousel} alt={cs.shortTitle} cardBg={cardBg} accent={accent} dim={dim} fade={fade} />
           ) : (
-            <div style={{ position: "relative", width: "100%", maxWidth: "calc(90vh * 16 / 9)", aspectRatio: "16 / 9", overflow: "hidden", background: cardBg, margin: "0 auto" }}>
+            <div style={{ position: "relative", width: "100%", aspectRatio: cs.coverAspect ?? "16 / 9", overflow: "hidden", background: cardBg, margin: "0 auto" }}>
               {/* eslint-disable-next-line @next/next/no-img-element */}
               <img src={cs.cover} alt={cs.shortTitle} style={{ position: "absolute", inset: 0, width: "100%", height: "100%", objectFit: cs.coverFit ?? "contain" }} />
             </div>
@@ -752,6 +757,85 @@ function Block({
         </div>
       );
 
+    case "personas": {
+      const wrapperStyle: React.CSSProperties = isMobile
+        ? {
+            display: "flex",
+            gap: 12,
+            overflowX: "auto",
+            overflowY: "hidden",
+            scrollSnapType: "x mandatory",
+            WebkitOverflowScrolling: "touch",
+            scrollbarWidth: "none",
+            paddingBottom: 8,
+            touchAction: "pan-x",
+            width: "100%",
+            minWidth: 0,
+          }
+        : { display: "grid", gridTemplateColumns: "repeat(3, 1fr)", gap: 16 };
+      const cardStyle: React.CSSProperties = isMobile
+        ? {
+            flex: "0 0 84%",
+            minWidth: 0,
+            scrollSnapAlign: "start",
+            padding: "22px 22px 24px",
+            borderRadius: 12,
+            background: cardBg,
+            border: `1px solid ${fade}`,
+            display: "flex",
+            flexDirection: "column",
+          }
+        : {
+            padding: "26px 24px 28px",
+            borderRadius: 12,
+            background: cardBg,
+            border: `1px solid ${fade}`,
+            display: "flex",
+            flexDirection: "column",
+          };
+      return (
+        <div style={wrapperStyle} className={isMobile ? "rw-scroller" : undefined}>
+          {blk.items.map((p, i) => (
+            <div
+              key={p.name}
+              style={cardStyle}
+            >
+              <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", marginBottom: 18 }}>
+                {p.photo ? (
+                  /* eslint-disable-next-line @next/next/no-img-element */
+                  <img
+                    src={p.photo}
+                    alt={p.photoAlt ?? p.name}
+                    style={{ width: 52, height: 52, borderRadius: "50%", objectFit: "cover", display: "block" }}
+                  />
+                ) : <span />}
+                <span className="font-mono" style={{ fontSize: 10, letterSpacing: "0.20em", color: dim }}>
+                  {String(i + 1).padStart(2, "0")}
+                </span>
+              </div>
+              <div style={{ fontSize: isMobile ? 19 : 20, fontWeight: 500, color: ink, letterSpacing: "-0.02em", lineHeight: 1.2 }}>
+                {p.name}
+              </div>
+              {[
+                { label: "Profile", text: p.profile },
+                { label: "Motivation", text: p.motivation },
+                { label: "Financials", text: p.financials },
+              ].map((f) => (
+                <div key={f.label} style={{ paddingTop: 12, marginTop: 12, borderTop: `1px solid ${fade}` }}>
+                  <div className="font-mono" style={{ fontSize: 9, letterSpacing: "0.18em", color: accent, textTransform: "uppercase", marginBottom: 6 }}>
+                    {f.label}
+                  </div>
+                  <div style={{ fontSize: isMobile ? 13 : 13, lineHeight: 1.55, color: body }}>
+                    {f.text}
+                  </div>
+                </div>
+              ))}
+            </div>
+          ))}
+        </div>
+      );
+    }
+
     case "statPills":
       return (
         <div style={{ display: "flex", gap: 8, flexWrap: "wrap" }}>
@@ -1003,6 +1087,115 @@ function Block({
         </a>
       );
 
+    case "video": {
+      /* Direct video file (.mp4 / .webm / .mov) → native <video> with
+         controls. Anything else falls through to the YouTube path: extract
+         the 11-char ID from watch / short / embed URLs or a bare ID. */
+      const isDirectFile = /\.(mp4|webm|mov|m4v)(\?|$)/i.test(blk.src);
+
+      const videoEl = isDirectFile ? (
+        <div style={{ position: "relative", width: "100%", overflow: "hidden", borderRadius: 8, background: "#000", border: `1px solid ${fade}` }}>
+          {/* eslint-disable-next-line jsx-a11y/media-has-caption */}
+          <video
+            src={blk.src}
+            controls
+            playsInline
+            preload="metadata"
+            style={{ display: "block", width: "100%", height: "auto" }}
+          />
+        </div>
+      ) : (() => {
+        const ytId = (() => {
+          const s = blk.src;
+          const m1 = s.match(/[?&]v=([a-zA-Z0-9_-]{11})/);
+          if (m1) return m1[1];
+          const m2 = s.match(/youtu\.be\/([a-zA-Z0-9_-]{11})/);
+          if (m2) return m2[1];
+          const m3 = s.match(/youtube\.com\/embed\/([a-zA-Z0-9_-]{11})/);
+          if (m3) return m3[1];
+          if (/^[a-zA-Z0-9_-]{11}$/.test(s)) return s;
+          return null;
+        })();
+        const embedSrc = ytId
+          ? `https://www.youtube.com/embed/${ytId}?rel=0&modestbranding=1`
+          : blk.src;
+        return (
+          <div style={{ position: "relative", width: "100%", paddingBottom: "56.25%", overflow: "hidden", borderRadius: 8, background: cardBg, border: `1px solid ${fade}` }}>
+            <iframe
+              src={embedSrc}
+              title={blk.caption ?? "Embedded video"}
+              loading="lazy"
+              allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture; web-share"
+              allowFullScreen
+              style={{ position: "absolute", top: 0, left: 0, width: "100%", height: "100%", border: 0 }}
+            />
+          </div>
+        );
+      })();
+      const videoCaption = blk.caption && (
+        <figcaption className="font-mono" style={{ fontSize: 11, letterSpacing: "0.04em", color: dim, marginTop: 10, lineHeight: 1.5 }}>
+          {blk.caption}
+        </figcaption>
+      );
+
+      if (blk.wide && !isMobile) {
+        return (
+          <figure style={{ margin: "0 -72px" }}>
+            {videoEl}
+            {videoCaption}
+          </figure>
+        );
+      }
+      return <figure style={{ margin: 0 }}>{videoEl}{videoCaption}</figure>;
+    }
+
+    case "bentoGrid": {
+      /* Composition comes from per-item colSpan (some pieces are wider
+         hero tiles). Heights are driven by each image's natural ratio so
+         nothing gets cropped. On desktop the grid bleeds ~48px outside the
+         column gutters per the request; on mobile it collapses to two
+         equal columns and aligns to the column. */
+      const cols = isMobile ? 1 : (blk.cols ?? 4);
+      return (
+        <div
+          style={{
+            display: "grid",
+            gridTemplateColumns: `repeat(${cols}, 1fr)`,
+            gap: isMobile ? 10 : 12,
+            gridAutoFlow: "row dense",
+            alignItems: "start",
+            width: isMobile ? "100%" : "calc(100% + 96px)",
+            marginLeft: isMobile ? 0 : -48,
+            marginRight: isMobile ? 0 : -48,
+          }}
+        >
+          {blk.items.map((it, i) => {
+            const cs = isMobile ? 1 : Math.min(cols, Math.max(1, it.colSpan ?? 1));
+            return (
+              <div
+                key={i}
+                onClick={() => onImageOpen?.(it.src, it.alt)}
+                style={{
+                  gridColumn: `span ${cs}`,
+                  overflow: "hidden",
+                  borderRadius: 8,
+                  background: cardBg,
+                  cursor: onImageOpen ? "pointer" : "default",
+                }}
+              >
+                {/* eslint-disable-next-line @next/next/no-img-element */}
+                <img
+                  src={it.src}
+                  alt={it.alt ?? ""}
+                  style={{ width: "100%", height: "auto", display: "block" }}
+                />
+              </div>
+            );
+          })}
+        </div>
+      );
+    }
+
     case "devicePair": {
       const frameBg = "#628AD0";
       return (
@@ -1244,12 +1437,114 @@ function ConceptTabs({
   cardBg: string; accent: string; ink: string; body: string; dim: string; fade: string;
   onImageOpen?: (src: string, alt?: string) => void;
 }) {
+  const { isDark } = useShell();
   const winnerIdx = items.findIndex((i) => i.winner);
   const [activeIdx, setActiveIdx] = useState(winnerIdx >= 0 ? winnerIdx : 0);
   const active = items[activeIdx];
 
+  /* Bootstrap-style tooltip palette: invert against the page background so
+     it reads as a separate UI surface in both themes. */
+  const tipBg   = isDark ? "rgba(245, 245, 248, 0.96)" : "rgba(20, 22, 30, 0.94)";
+  const tipText = isDark ? "rgba(15, 15, 20, 0.92)"    : "rgba(255, 255, 255, 0.95)";
+
+  /* "Click to compare" tooltip. Fires every time this block re-enters the
+     viewport; auto-fades after a short hold. Clicking dismisses immediately. */
+  const containerRef = useRef<HTMLDivElement>(null);
+  const [hintVisible, setHintVisible] = useState(false);
+  const fadeTimerRef = useRef<number | null>(null);
+
+  useEffect(() => {
+    const el = containerRef.current;
+    if (!el) return;
+
+    const clearFade = () => {
+      if (fadeTimerRef.current !== null) {
+        window.clearTimeout(fadeTimerRef.current);
+        fadeTimerRef.current = null;
+      }
+    };
+
+    const observer = new IntersectionObserver(
+      ([entry]) => {
+        if (entry.isIntersecting) {
+          clearFade();
+          setHintVisible(true);
+          fadeTimerRef.current = window.setTimeout(() => {
+            setHintVisible(false);
+            fadeTimerRef.current = null;
+          }, 2800);
+        } else {
+          clearFade();
+          setHintVisible(false);
+        }
+      },
+      { threshold: 0.35 },
+    );
+    observer.observe(el);
+    return () => {
+      clearFade();
+      observer.disconnect();
+    };
+  }, []);
+
+  /* Hide the hint immediately if the user clicks before it auto-dismisses. */
+  const handleSelect = (i: number) => {
+    if (hintVisible) setHintVisible(false);
+    if (fadeTimerRef.current !== null) {
+      window.clearTimeout(fadeTimerRef.current);
+      fadeTimerRef.current = null;
+    }
+    setActiveIdx(i);
+  };
+
   return (
-    <div style={{ display: "flex", flexDirection: "column", gap: 16 }}>
+    <div ref={containerRef} style={{ position: "relative", display: "flex", flexDirection: "column", gap: 16 }}>
+      <AnimatePresence>
+        {hintVisible && !isMobile && (
+          <motion.div
+            aria-hidden="true"
+            initial={{ opacity: 0, x: 6 }}
+            animate={{ opacity: 1, x: 0 }}
+            exit={{ opacity: 0, x: -4 }}
+            transition={{ duration: 0.22, ease: "easeOut" }}
+            style={{
+              position: "absolute",
+              top: 12,
+              right: "100%",
+              marginRight: 14,
+              padding: "6px 10px",
+              borderRadius: 4,
+              background: tipBg,
+              color: tipText,
+              fontSize: 12,
+              fontWeight: 400,
+              lineHeight: 1.4,
+              whiteSpace: "nowrap",
+              pointerEvents: "none",
+              zIndex: 5,
+              boxShadow: "0 2px 8px rgba(0, 0, 0, 0.18)",
+            }}
+          >
+            Click to compare
+            {/* Right-pointing caret toward the rows */}
+            <span
+              aria-hidden="true"
+              style={{
+                position: "absolute",
+                right: -5,
+                top: "50%",
+                marginTop: -5,
+                width: 0,
+                height: 0,
+                borderTop: "5px solid transparent",
+                borderBottom: "5px solid transparent",
+                borderLeft: `5px solid ${tipBg}`,
+              }}
+            />
+          </motion.div>
+        )}
+      </AnimatePresence>
+
       {/* Concept rows */}
       <div style={{ display: "flex", flexDirection: "column" }}>
         {items.map((item, i) => {
@@ -1257,7 +1552,7 @@ function ConceptTabs({
           return (
             <button
               key={i}
-              onClick={() => setActiveIdx(i)}
+              onClick={() => handleSelect(i)}
               style={{ display: "flex", alignItems: "flex-start", gap: 14, padding: "14px 0", borderTop: `1px solid ${fade}`, borderBottom: "none", borderLeft: "none", borderRight: "none", background: "none", cursor: "pointer", textAlign: "left", width: "100%" }}
             >
               <div style={{ width: 26, height: 26, borderRadius: "50%", background: item.winner ? accent : (isActive ? `${accent}20` : cardBg), border: `1.5px solid ${item.winner || isActive ? accent : fade}`, display: "flex", alignItems: "center", justifyContent: "center", flexShrink: 0, marginTop: 3, transition: "all 0.18s ease" }}>
@@ -1296,7 +1591,7 @@ function ConceptTabs({
           {items.map((item, i) => (
             <button
               key={i}
-              onClick={() => setActiveIdx(i)}
+              onClick={() => handleSelect(i)}
               className="font-mono"
               style={{ display: "inline-flex", alignItems: "center", gap: 6, padding: "5px 12px", borderRadius: 6, border: "none", background: i === activeIdx ? `${accent}18` : "transparent", color: i === activeIdx ? accent : dim, fontSize: 9, letterSpacing: "0.14em", textTransform: "uppercase", cursor: "pointer", transition: "all 0.18s ease" }}
             >

@@ -14,6 +14,7 @@ export type CaseBlock =
   | { type: "image"; src: string; alt?: string; caption?: string; fullBleed?: boolean; wide?: boolean; fit?: "cover" | "contain" | "natural"; aspect?: string; frame?: string; frameBleed?: boolean }
   | { type: "imagePair"; fit?: "cover" | "contain" | "natural"; items: { src: string; label?: string; caption?: string; alt?: string; fit?: "cover" | "contain" | "natural" }[] }
   | { type: "objectives"; items: { emoji: string; label: string; sub: string }[] }
+  | { type: "personas"; items: { glyph: "exec" | "couple" | "passion"; name: string; profile: string; motivation: string; financials: string; photo?: string; photoAlt?: string }[] }
   | { type: "statPills"; items: { value: string; label?: string }[] }
   | { type: "list"; marker?: "x" | "check" | "dot"; items: string[] }
   | { type: "quote"; text: string }
@@ -25,7 +26,9 @@ export type CaseBlock =
   | { type: "painPoints"; screenshot?: string; screenshotMobile?: string; screenshotAlt?: string; items: string[] }
   | { type: "phoneFlow"; heading?: string; description?: string; mobileImage?: string; mobileAlt?: string; items: { label: string; description?: string; src: string; alt?: string }[] }
   | { type: "devicePair"; desktop: { src: string; alt?: string }; mobile: { src: string; alt?: string }; caption?: string }
-  | { type: "externalLink"; label: string; href: string; description?: string };
+  | { type: "externalLink"; label: string; href: string; description?: string }
+  | { type: "video"; src: string; caption?: string; wide?: boolean }
+  | { type: "bentoGrid"; items: { src: string; alt?: string; colSpan?: number; rowSpan?: number }[]; cols?: number };
 
 export interface CaseSection {
   /* URL-fragment-safe id used as the anchor target and TOC link */
@@ -59,15 +62,27 @@ export interface CaseStudy {
   overview: string;
   challenge: string;
   tags: string[];
+  /* Short uppercase indicators (e.g. "UX/UI", "SOCIAL", "BRAND") shown as
+     chips on the gallery thumbnails. Keep to 1–2 entries, ~7 chars max. */
+  kinds?: string[];
   images: string[];
   url: string;
   /* Multiple cover images — renders as a carousel in the Hero. Falls back
      to the single `cover` image when absent. */
   coverCarousel?: string[];
+  /* Optional gallery-specific thumbnail. When present, the home-page
+     gallery and work-list rows use this instead of `cover`. The case
+     detail hero still uses `cover`. Use for square-optimized shots
+     when the hero cover is a different ratio or composition. */
+  galleryCover?: string;
   /* Object-fit for the single cover image on the detail page. Defaults to
      "contain" so existing case-study covers stay letterboxed inside the
      16:9 frame. Set to "cover" when the asset is designed to bleed. */
   coverFit?: "cover" | "contain";
+  /* Override the hero frame ratio for the single cover image. Defaults to
+     "16 / 9". Use this when the source asset has a different native ratio
+     and you want the frame to match it exactly (no letterboxing). */
+  coverAspect?: string;
   /* Personal closing section rendered after all body sections. */
   conclusion?: {
     quote: string;
@@ -126,14 +141,29 @@ export function placeholder(label: string, accent: string, aspect = "16/9"): str
 export const CASE_STUDIES: CaseStudy[] = [
   {
     id: "talitha",
-    title: "Talitha Coffee — Brand & Digital Experience",
+    title: "Talitha Coffee: Brand & Digital Experience",
     shortTitle: "Talitha Coffee",
     company: "Omni Common",
     year: "2025",
-    role: "UX Strategy, Web Design, Brand Art Direction",
-    deliverables: "Website Redesign, Shopify, Brand Art Direction",
+    role: "UX Strategy, Web Design, Social Media Design",
+    deliverables: "Website Redesign, Social Media System, Shopify",
     tagline: "Coffee worth the ritual.",
     cover: "/covers/talitha.png",
+    coverCarousel: [
+      "/case-studies/talitha/cover/1.jpg",
+      "/case-studies/talitha/cover/2.jpg",
+      "/case-studies/talitha/cover/3.jpg",
+      "/case-studies/talitha/cover/4.jpg",
+      "/case-studies/talitha/cover/5.jpg",
+      "/case-studies/talitha/cover/6.jpg",
+      "/case-studies/talitha/cover/7.jpg",
+      "/case-studies/talitha/cover/8.jpg",
+      "/case-studies/talitha/cover/9.jpg",
+      "/case-studies/talitha/cover/10.jpg",
+      "/case-studies/talitha/cover/11.jpg",
+      "/case-studies/talitha/cover/12.jpg",
+      "/case-studies/talitha/cover/13.jpg",
+    ],
     accent: "#C8956C",
     size: "large",
     metrics: [
@@ -143,10 +173,11 @@ export const CASE_STUDIES: CaseStudy[] = [
       { label: "Café order value lift", value: "+33%" },
     ],
     overview:
-      "Talitha Coffee (formerly The WestBean Coffee Roasters) is a San Diego coffee brand — three cafés, a roastery, and a mission to end human trafficking. When they came in mid-rebrand, the site read like a generic ecommerce store. We rebuilt it to lead with the cafés, the community, and the mission.",
+      "Talitha Coffee (formerly The WestBean Coffee Roasters) is a San Diego coffee brand with three cafés, a roastery, and a mission to end human trafficking. When they came in mid-rebrand, the site read like a generic ecommerce store. We rebuilt it to lead with the cafés, the community, and the mission.",
     challenge:
-      "The site had forgotten it had cafés — all product grid, no hours, menus, or locations. With 72.4% of customers having visited only once, the real lever was local loyalty, not more national reach.",
-    tags: ["Brand Art Direction", "Web Design", "Shopify", "UX Strategy"],
+      "The site had forgotten it had cafés. All product grid, no hours, menus, or locations. With 72.4% of customers having visited only once, the real lever was local loyalty, not more national reach.",
+    tags: ["UX Strategy", "Social Media Design", "Web Design", "Shopify"],
+    kinds: ["UX/UI", "SOCIAL"],
     images: [],
     url: "/case/talitha",
     body: [
@@ -157,7 +188,7 @@ export const CASE_STUDIES: CaseStudy[] = [
         blocks: [
           {
             type: "p",
-            text: "Talitha (formerly The WestBean Coffee Roasters) is a San Diego coffee brand — three cafés, a roastery, and a mission to end human trafficking. The name means 'little girl, arise.' When I came in, they were spending like a national ecommerce brand on a budget that couldn't carry it. My job: pull all that digital energy back home to San Diego and make the website feel like the local café it actually is.",
+            text: "Talitha (formerly The WestBean Coffee Roasters) is a San Diego coffee brand with three cafés, a roastery, and a mission to end human trafficking. The name means 'little girl, arise.' When I came in, they were spending like a national ecommerce brand on a budget that couldn't carry it. My job: lead the UX and social media design strategy that pulled all that digital energy back home to San Diego, working from the SEO and marketing team data that shaped every decision.",
           },
           {
             type: "metricCards",
@@ -177,33 +208,33 @@ export const CASE_STUDIES: CaseStudy[] = [
         blocks: [
           {
             type: "p",
-            text: "Talitha was moving from 'The WestBean' to a new identity without losing the regulars — while running on a local budget that didn't match the national ambitions of the previous strategy. The website reflected the confusion: it looked like a DTC ecommerce store and had completely forgotten that Talitha had three physical cafés in San Diego.",
+            text: "Talitha was moving from 'The WestBean' to a new identity without losing the regulars, while running on a local budget that didn't match the national ambitions of the previous strategy. The website reflected the confusion: it looked like a DTC ecommerce store and had completely forgotten that Talitha had three physical cafés in San Diego.",
           },
           {
             type: "image",
-            src: placeholder("Old site — annotated pain points", "#C8956C", "16/9"),
-            alt: "Annotated screenshot of the old Talitha website showing pain points",
-            caption: "Fig. 01 — The old site: all product grid, no hours, menus, or locations. Built to sell nationally, not locally.",
+            src: "/case-studies/talitha/goals/old-site.gif",
+            alt: "Walkthrough of the old Talitha website, all product grid and no café presence",
+            caption: "Fig. 01. The old site: all product grid, no hours, menus, or locations. Built to sell nationally, not locally.",
           },
           { type: "h3", text: "Pain points" },
           {
             type: "list",
             marker: "x",
             items: [
-              "Budget spread too thin — national reach on local money, nothing compounded",
-              "Mid-rebrand confusion — moving from The WestBean to Talitha without a clear identity bridge",
-              "Website with no café presence — no hours, no menus, no location pages",
+              "Budget spread too thin: national reach on local money, nothing compounded",
+              "Mid-rebrand confusion: moving from The WestBean to Talitha without a clear identity bridge",
+              "Website with no café presence: no hours, no menus, no location pages",
               "Aggressive subscription intros pulled visitors in, then they bounced",
-              "Generic visual identity — polished but without personality or local connection",
+              "Generic visual identity: polished but without personality or local connection",
             ],
           },
           { type: "h3", text: "Three objectives" },
           {
             type: "objectives",
             items: [
-              { emoji: "📍", label: "Go local", sub: "Pull the digital strategy back to San Diego. Make Talitha the coffee brand the city reaches for first." },
-              { emoji: "☕", label: "Lead with cafés", sub: "Rebuild the site around the physical experience — menus, hours, neighborhoods, and the people behind the bar." },
-              { emoji: "🌱", label: "Compound", sub: "Build local gravity that grows over time, not ad spend that evaporates." },
+              { emoji: "📍", label: "Lead with UX", sub: "Rebuild the site around real local intent, informed by SEO, customer, and marketing data." },
+              { emoji: "📱", label: "Design for social", sub: "Treat Instagram and content as a primary design surface, not a brand-book afterthought." },
+              { emoji: "🌱", label: "Compound locally", sub: "Build San Diego gravity that grows over time, not national ad spend that evaporates." },
             ],
           },
         ],
@@ -211,11 +242,16 @@ export const CASE_STUDIES: CaseStudy[] = [
       {
         id: "research",
         label: "Research & Analysis",
-        heading: "265,705 customers. One insight.",
+        heading: "Three teams. One data picture.",
         blocks: [
           {
             type: "p",
-            text: "I dug into their café database — 265,705 customers, 757,223 transactions, and 8+ years of history. One number reframed everything: 72.4% of customers had visited only once. The whole business was running on a thin repeat base. That meant local loyalty — not more national reach — was the real lever to pull.",
+            text: "I treated this like a design problem with three data sources to triangulate against. The customer database held the buying behavior. The SEO team held the local search intent. The marketing team held channel performance and what was actually compounding versus burning. None of them on their own showed the whole picture. Together they did.",
+          },
+          { type: "h3", text: "Source 1: the customer database" },
+          {
+            type: "p",
+            text: "Across 265,705 customers and 757,223 transactions in 8+ years of history, one number reframed everything: 72.4% of customers had visited only once. The whole business was running on a thin repeat base, not a wide loyal one. The lever wasn't more reach. It was depth.",
           },
           {
             type: "statPills",
@@ -228,13 +264,19 @@ export const CASE_STUDIES: CaseStudy[] = [
           },
           {
             type: "image",
-            src: placeholder("Customer segmentation — repeat vs. one-time visitors", "#C8956C", "16/9"),
-            alt: "Chart showing customer segmentation by visit frequency",
-            caption: "Fig. 02 — The core finding: 72.4% of customers had visited only once. The business needed depth, not width.",
+            src: "/case-studies/talitha/research/cafe-photo.jpg",
+            alt: "Inside a Talitha café, latte art and morning light",
+            caption: "Fig. 02. Inside the Bankers Hill café. The locals knew Talitha. The website didn't know them back.",
           },
+          { type: "h3", text: "Source 2: SEO search intent" },
           {
             type: "p",
-            text: "Locals wanted hours, menus, and directions. The site was giving them a checkout. The gap wasn't product — it was presence. Talitha needed a website that felt like walking into the Bankers Hill café, not clicking through a DTC storefront.",
+            text: "The SEO team's keyword data filled in the second layer. Branded search for 'Talitha coffee' was climbing in San Diego, and 'coffee near me' queries inside the city were pulling traffic that the site couldn't catch. There were no neighborhood pages, no hours, no menus to surface in local results. People were searching with local intent and landing on a national checkout flow.",
+          },
+          { type: "h3", text: "Source 3: marketing channel data" },
+          {
+            type: "p",
+            text: "Marketing closed the loop. The national ad spend was pulling traffic that didn't convert and didn't return. Local social engagement, by contrast, was sticky: people who followed the cafés on Instagram came back. The math was obvious in hindsight. Stop chasing the country. Go deep on San Diego.",
           },
         ],
       },
@@ -245,17 +287,33 @@ export const CASE_STUDIES: CaseStudy[] = [
         blocks: [
           {
             type: "p",
-            text: "The bet: stop chasing the country, go deep on San Diego. A dollar spent building local gravity compounds — the same dollar scattered nationally just evaporates. The strategy flipped the site's hierarchy: cafés first, ecommerce second.",
+            text: "The bet, agreed across UX, SEO, and marketing: stop chasing the country, go deep on San Diego. A dollar spent building local gravity compounds. The same dollar scattered nationally just evaporates. The strategy flipped the site's hierarchy in one move: cafés first, ecommerce second, and social as a primary surface instead of an afterthought.",
           },
           {
             type: "p",
-            text: "A note on attribution — there's a +571% DTC ecommerce lift floating around from this period. That's a real number, but it was driven by a separate national influencer program, not by the redesign. Where I can point to actual design impact: the café-first rebuild (+128% traffic, +64% branded search) and the in-store order value lift (+33% across all three locations).",
+            text: "A note on attribution: there's a +571% DTC ecommerce lift floating around from this period. That's a real number, but it was driven by a separate national influencer program, not by the redesign. Where I can point to actual design impact: the café-first rebuild (+128% traffic, +64% branded search) and the in-store order value lift (+33% across all three locations).",
+          },
+          { type: "h3", text: "The new homepage" },
+          {
+            type: "p",
+            text: "The homepage became the load-bearing decision. The first scroll had to deliver the cafés, the mission, and the neighborhood story before anything tried to sell a bag of coffee. Below the fold, the shop is still there for the national audience. Above it, San Diego comes first.",
           },
           {
             type: "image",
-            src: placeholder("Local-to-digital conversion loop — strategy diagram", "#C8956C", "16/9"),
-            alt: "Strategy diagram showing the local-to-digital conversion loop",
-            caption: "Fig. 03 — The flywheel: in-café experience drives local search → local search drives site visits → site visits drive return visits.",
+            src: "/case-studies/talitha/strategy/new-site.gif",
+            alt: "Animated walkthrough of the new Talitha homepage",
+            caption: "Fig. 03. The new homepage: cafés and mission lead. Shop sits below, not on top.",
+            wide: true,
+          },
+          { type: "h3", text: "The hero video" },
+          {
+            type: "p",
+            text: "Working with Paul, our in-house editor, I shaped a short video clip designed to capture Talitha's brand personality. It anchors the homepage hero, setting the tone before anyone scrolls past it.",
+          },
+          {
+            type: "video",
+            src: "/case-studies/talitha/strategy/hero-video.mp4",
+            caption: "Fig. 04. Hero video, made with Paul (in-house editor) to lead the homepage with the brand's actual personality.",
           },
         ],
       },
@@ -266,13 +324,26 @@ export const CASE_STUDIES: CaseStudy[] = [
         blocks: [
           {
             type: "p",
-            text: "I rebuilt the site to lead with the café and the mission instead of a product grid. That meant neighborhood pages — one for Bankers Hill, one for Clairemont, one for Liberty Station. Real menus, real hours, real maps, and community photography instead of a generic shop layout. People looking for coffee near them found a destination, not a checkout flow.",
+            text: "With the homepage leading visitors into the neighborhood, the next layer had to deliver on that promise. The old site had no real café presence: a single locations page with addresses and not much else. I rebuilt each neighborhood as its own destination, one for Bankers Hill, one for Clairemont, one for Liberty Station, with real menus, real hours, real maps, and community photography. People looking for coffee near them found a place, not a directory.",
           },
           {
-            type: "imagePair",
+            type: "conceptTabs",
             items: [
-              { src: placeholder("Before — homepage", "#C8956C", "4/3"), label: "Before", caption: "Product grid homepage — ecommerce-first, café-last." },
-              { src: placeholder("After — café-first homepage", "#C8956C", "4/3"), label: "After", caption: "Café-first rebuild — neighborhood, mission, community." },
+              {
+                src: "/case-studies/talitha/ux/local-pages/before.gif",
+                alt: "Before · Old Talitha locations page with basic address list",
+                label: "Before · Generic locations page",
+                tabLabel: "Before",
+                description: "A single page with three addresses and a map pin. No menus, no hours, no story.",
+              },
+              {
+                src: "/case-studies/talitha/ux/local-pages/after.gif",
+                alt: "After · Dedicated Talitha neighborhood pages for each café",
+                label: "After · Dedicated neighborhood pages",
+                tabLabel: "After",
+                description: "Each café gets its own page: menu, hours, map, baristas, and community photography.",
+                winner: true,
+              },
             ],
           },
           { type: "h3", text: "Shop improvements" },
@@ -284,18 +355,31 @@ export const CASE_STUDIES: CaseStudy[] = [
             type: "list",
             marker: "check",
             items: [
-              "Sticky sidebar nav — never lose your place between collections",
-              "Quick-add on product cards — build a cart without leaving the page",
-              "Roast tags and cert icons — faster decisions at the product level",
+              "Sticky sidebar nav so you never lose your place between collections",
+              "Quick-add on product cards to build a cart without leaving the page",
+              "Roast tags and cert icons for faster decisions at the product level",
               "Calm mission banner (replaced all-caps accessibility-hostile marquee)",
-              "Soft newsletter signup below shop — no popup, just context",
+              "Soft newsletter signup below shop, no popup, just context",
             ],
           },
           {
-            type: "imagePair",
+            type: "conceptTabs",
             items: [
-              { src: placeholder("Before — product grid", "#C8956C", "4/3"), label: "Before", caption: "Old product grid — no navigation, no quick-add, no hierarchy." },
-              { src: placeholder("After — product grid redesign", "#C8956C", "4/3"), label: "After", caption: "Redesigned shop — sticky nav, quick-add, clear tags." },
+              {
+                src: "/case-studies/talitha/ux/shop/before.jpg",
+                alt: "Before · Old Talitha product grid with no sidebar or quick-add",
+                label: "Before · Old product grid",
+                tabLabel: "Before",
+                description: "No navigation, no quick-add, no hierarchy. Every collection forced a full page reload.",
+              },
+              {
+                src: "/case-studies/talitha/ux/shop/after.jpg",
+                alt: "After · Redesigned Talitha shop with sticky sidebar and quick-add",
+                label: "After · Redesigned shop",
+                tabLabel: "After",
+                description: "Sticky sidebar nav, quick-add cards, clear roast tags and cert icons.",
+                winner: true,
+              },
             ],
           },
           {
@@ -306,27 +390,47 @@ export const CASE_STUDIES: CaseStudy[] = [
               { value: "67%", label: "one-timers (down from 72.4%)" },
             ],
           },
+          { type: "h3", text: "Email marketing support" },
+          {
+            type: "p",
+            text: "Beyond the main redesign, I also jump in to support the email marketing team on some of their campaign designs. Mostly seasonal launches and product drops, keeping the site, social, and inbox landing on the same beat.",
+          },
+          {
+            type: "image",
+            src: "/case-studies/talitha/ux/email.jpg",
+            alt: "Talitha email campaign design",
+          },
+          {
+            type: "sectionBreak",
+            src: "/case-studies/talitha/ux/visual-break.jpg",
+            alt: "Talitha redesigned experience, full visual recap",
+          },
         ],
       },
       {
-        id: "brand",
-        label: "Brand Identity",
-        heading: "People-first storytelling.",
+        id: "social",
+        label: "Social Media Design",
+        heading: "Designed for the feed, not just the framework.",
         blocks: [
           {
             type: "p",
-            text: "The old visuals were polished but soulless. I pushed the brand toward people-first storytelling — founder interviews, barista spotlights, behind-the-scenes content, and real customer photography. The visual identity didn't change structurally, but the art direction did: warmth over precision, community over curation, story over style.",
+            text: "Social got the same energy as the site. The feed, the packaging, the seasonal stuff (Christmas drops, holiday limited releases, the fun launches) all designed as one system instead of one-off posts. A handful of those pieces ended up doing double duty in digital PR too, picked up by press and partner placements. To keep up with the volume, we leaned on AI for first drafts, mockups, and quick variants, then I'd push the ones that mattered into final design. It cut hours off every campaign and let us ship more without the work feeling cranked out.",
           },
           {
-            type: "imagePair",
+            type: "bentoGrid",
+            cols: 3,
             items: [
-              { src: placeholder("Old brand in context — generic, polished", "#C8956C", "4/3"), label: "Before", caption: "Old art direction — polished but impersonal." },
-              { src: placeholder("New brand in context — community, warmth", "#C8956C", "4/3"), label: "After", caption: "New direction — people-first, community-rooted." },
+              { src: "/case-studies/talitha/social/01-talitha.jpg", alt: "Talitha brand hero piece", colSpan: 2 },
+              { src: "/case-studies/talitha/social/02-a.jpg", alt: "Talitha campaign design A" },
+              { src: "/case-studies/talitha/social/03-h.jpg", alt: "Talitha campaign design H" },
+              { src: "/case-studies/talitha/social/04-mom.jpg", alt: "Talitha Mother's Day campaign" },
+              { src: "/case-studies/talitha/social/05-generated.jpg", alt: "Talitha social piece, AI-assisted draft pushed to final", colSpan: 2 },
+              { src: "/case-studies/talitha/social/06-post.jpg", alt: "Talitha social post" },
+              { src: "/case-studies/talitha/social/07-post.jpg", alt: "Talitha social post" },
+              { src: "/case-studies/talitha/social/08-post.jpg", alt: "Talitha social post", colSpan: 2 },
+              { src: "/case-studies/talitha/social/09-post.jpg", alt: "Talitha social post" },
+              { src: "/case-studies/talitha/social/10-post.jpg", alt: "Talitha social post" },
             ],
-          },
-          {
-            type: "p",
-            text: "That identity shift fed a content engine that grew reach +343% year-over-year, and Instagram went from 2,260 to 7,569 followers (+235%). My art direction set the foundation — the social results were a team effort built on top of it.",
           },
           {
             type: "statPills",
@@ -336,15 +440,28 @@ export const CASE_STUDIES: CaseStudy[] = [
               { value: "2,260 → 7,569", label: "follower growth" },
             ],
           },
+          { type: "h3", text: "Want to see more?" },
           {
-            type: "quote",
-            text: "Leading with the cafés and the mission gave a rebranding business a face — and the in-café numbers moved because of it.",
+            type: "p",
+            text: "Visit Talitha directly to see the work in the wild, or check out the full publication on Behance for more design context.",
+          },
+          {
+            type: "externalLink",
+            description: "Visit Talitha",
+            label: "talithacoffee.com",
+            href: "https://www.talithacoffee.com",
+          },
+          {
+            type: "externalLink",
+            description: "Full publication",
+            label: "view on Behance",
+            href: "https://www.behance.net/gallery/248756075/Talitha-Lifes-Cycle-UX-2024-2026",
           },
         ],
       },
     ],
     conclusion: {
-      quote: "Building the local digital presence Talitha deserved was one of the most rewarding projects I've worked on. When a brand starts resonating with its community, you feel it in the numbers — and in the neighborhood.",
+      quote: "Building the local digital presence Talitha deserved was one of the most rewarding projects I've worked on. When a brand starts resonating with its community, you feel it in the numbers, and in the neighborhood.",
       body: "The redesign moved the metrics, but what stuck with me was that Talitha finally felt like the San Diego brand it always was.",
       signoff: "Thank you for reading!",
     },
@@ -359,19 +476,23 @@ export const CASE_STUDIES: CaseStudy[] = [
     deliverables: "Ad Creative, Meta, PPC, LinkedIn",
     tagline: "Ads built for investors, not just fans.",
     cover: "/covers/bodybar.png",
+    galleryCover: "/covers/bodybar-thumb.png",
+    coverFit: "cover",
+    coverAspect: "3 / 2",
     accent: "#F97316",
     size: "small",
     metrics: [
       { label: "Leads generated", value: "567" },
       { label: "Google impressions", value: "276K+" },
-      { label: "Organic lead qualification", value: "78–80%" },
+      { label: "Organic lead qualification", value: "78 to 80%" },
       { label: "Only converting Meta angle", value: "Power Couples" },
     ],
     overview:
-      "BODYBAR Pilates needed more than gym sign-ups — they needed qualified investors ready to open a franchise. I led the design strategy across Meta, Google, and LinkedIn: competitor benchmark, three investor personas, and componentized master designs that let the team adapt fast across every channel.",
+      "BODYBAR Pilates needed more than gym sign-ups. They needed qualified investors ready to open a franchise. I led the design strategy across Meta, Google, and LinkedIn: competitor benchmark, three investor personas, and componentized master designs that let the team adapt fast across every channel.",
     challenge:
-      "Previous agencies pulled clicks but missed the actual goal. BODYBAR sells franchises, not memberships. The creative had to speak to investors, not fitness fans — and only one angle actually did.",
+      "Previous agencies pulled clicks but missed the actual goal. BODYBAR sells franchises, not memberships. The creative had to speak to investors, not fitness fans, and only one angle actually did.",
     tags: ["Ad Creative", "Meta", "PPC", "Brand Strategy"],
+    kinds: ["ADS", "BRAND"],
     images: [],
     url: "/case/bodybar",
     body: [
@@ -382,15 +503,15 @@ export const CASE_STUDIES: CaseStudy[] = [
         blocks: [
           {
             type: "p",
-            text: "BODYBAR Pilates needed people ready to invest in opening a studio — not just more gym sign-ups. I led the design strategy that turned ad spend into qualified investor leads. Five months of campaigns, 567 leads, and — more importantly — a clear map of what actually converts.",
+            text: "BODYBAR Pilates needed people ready to invest in opening a studio, not just more gym sign-ups. I led the design strategy that turned ad spend into qualified investor leads. Five months of campaigns, 567 leads, and (more importantly) a clear map of what actually converts.",
           },
           {
             type: "metricCards",
             items: [
-              { value: "567", label: "Leads generated", sub: "Feb–Jun 2026 across all channels." },
-              { value: "276K+", label: "Google impressions", sub: "$25,119 spent — Search and PMax driving qualified leads." },
-              { value: "78–80%", label: "Organic qualification rate", sub: "Franchise website and organic search vs. ~23–27% from broad paid." },
-              { value: "Power Couples", label: "Top-performing Meta audience", sub: "Breakout angle — 56 leads, 4 qualified investors. No other creative came close." },
+              { value: "567", label: "Leads generated", sub: "Feb to Jun 2026 across all channels." },
+              { value: "276K+", label: "Google impressions", sub: "$25,119 spent. Search and PMax driving qualified leads." },
+              { value: "78 to 80%", label: "Organic qualification rate", sub: "Franchise website and organic search vs. ~23 to 27% from broad paid." },
+              { value: "Power Couples", label: "Top-performing Meta audience", sub: "Breakout angle: 56 leads, 4 qualified investors. No other creative came close." },
             ],
           },
         ],
@@ -402,7 +523,7 @@ export const CASE_STUDIES: CaseStudy[] = [
         blocks: [
           {
             type: "p",
-            text: "BODYBAR sells Pilates franchises. The real goal isn't memberships — it's finding qualified people who want to own a studio. Previous agencies missed this. Their campaigns pulled clicks and impressions, but the leads never matched what BODYBAR was actually selling: a serious investment opportunity.",
+            text: "BODYBAR sells Pilates franchises. The real goal isn't memberships; it's finding qualified people who want to own a studio. Previous agencies missed this. Their campaigns pulled clicks and impressions, but the leads never matched what BODYBAR was actually selling: a serious investment opportunity.",
           },
           {
             type: "p",
@@ -416,7 +537,7 @@ export const CASE_STUDIES: CaseStudy[] = [
               "Creative aimed at fitness enthusiasts, not franchise investors",
               "High click volume with low-quality lead qualification",
               "No clear read on which channels or angles produced serious investors",
-              "No persona framework — all audiences treated the same way",
+              "No persona framework; all audiences treated the same way",
               "Ad variants rebuilt from scratch instead of componentized for speed",
             ],
           },
@@ -429,75 +550,149 @@ export const CASE_STUDIES: CaseStudy[] = [
         blocks: [
           {
             type: "p",
-            text: "Before designing anything, I built a competitor benchmark in Figma — breaking down how other fitness and franchise brands ran their ads: messaging, visuals, offers, and tone. That gave us a clear map of the category and showed where BODYBAR could stand out instead of blend in.",
+            text: "BODYBAR came to us with internal insights on their existing investor base, the profiles, traits, and patterns of the people who had signed and scaled. That knowledge framed the research from day one and kept us focused on the audiences that actually convert.",
+          },
+          {
+            type: "p",
+            text: "From there, we built a competitor benchmark in Figma, breaking down how other fitness and franchise brands ran their ads: messaging, visuals, offers, and tone. That gave us a clear map of the category and showed where BODYBAR could stand out instead of blend in.",
           },
           {
             type: "image",
-            src: placeholder("Competitor benchmark — fitness & franchise ads", "#F97316", "16/9"),
+            src: "/case-studies/bodybar/bodybar-research-competitors.png",
             alt: "Figma competitor benchmark board with ad breakdowns and annotations",
-            caption: "Fig. 01 — Competitor audit in Figma: messaging, visual treatment, offer structure, and tone across fitness and franchise brands.",
+            caption: "Fig. 01. Competitor audit in Figma: messaging, visuals, offer, and tone across fitness and franchise brands.",
+            fit: "contain",
+          },
+          {
+            type: "image",
+            src: "/case-studies/bodybar/bodybar-research-personas.png",
+            alt: "Persona research synthesis in Figma: traits, motivations, and ad angles per investor type",
+            caption: "Fig. 02. Persona synthesis. Each profile became a distinct creative direction.",
+            fit: "contain",
           },
           { type: "h3", text: "Three investor personas" },
           {
             type: "p",
-            text: "The research pointed to three audiences worth designing for — each with its own angle, visuals, and message.",
+            text: "Research pointed to three audiences worth designing for. Three profiles, three angles, three creative directions.",
           },
           {
-            type: "objectives",
+            type: "personas",
             items: [
-              { emoji: "💼", label: "White-Collar Professionals", sub: "Corporate execs looking for a meaningful business to own alongside their career." },
-              { emoji: "👫", label: "Power Couples", sub: "Partners investing in a venture together — the angle that turned out to be the only one converting." },
-              { emoji: "🏋️", label: "Passion Players", sub: "Fitness lovers who want to turn what they love into a business." },
+              {
+                glyph: "exec",
+                name: "The Corporate Exec",
+                profile: "Senior corporate leader: CEO, VP, Director.",
+                motivation: "Done with the 80-hour grind. Wants ownership.",
+                financials: "$2M to $6M+ net worth. Highly liquid.",
+                photo: "/case-studies/bodybar/personas/corporate-exec.png",
+                photoAlt: "Corporate executive persona portrait",
+              },
+              {
+                glyph: "couple",
+                name: "The Power Couple",
+                profile: "Married partners with complementary skill sets.",
+                motivation: "Build a family business. Win a local market.",
+                financials: "$2M to $16M+ combined. Self-funded or SBA.",
+                photo: "/case-studies/bodybar/personas/power-couple.png",
+                photoAlt: "Power couple persona portrait",
+              },
+              {
+                glyph: "passion",
+                name: "The Passion Player",
+                profile: "Lifelong Pilates and wellness practitioner.",
+                motivation: "Turn the lifestyle into the livelihood.",
+                financials: "$500k to $1.5M. SBA, 401k rollover, or family.",
+                photo: "/case-studies/bodybar/personas/passion-player.png",
+                photoAlt: "Passion player persona portrait",
+              },
             ],
-          },
-          {
-            type: "image",
-            src: placeholder("Three persona cards — White-Collar / Power Couples / Passion Players", "#F97316", "16/9"),
-            alt: "Three investor persona cards with photo, traits, motivation, and ad angle",
-            caption: "Fig. 02 — One persona card per investor type. Each shaped a distinct creative direction.",
           },
         ],
       },
       {
         id: "design",
         label: "Design & Production",
-        heading: "Master once. Adapt everywhere.",
+        heading: "Built to ship, every month.",
         blocks: [
           {
             type: "p",
-            text: "With personas locked, we built content maps and one master design per angle in a single Figma file. Then componentized them — so adapting to different aspect ratios and channel specs was a matter of swapping variants, not rebuilding art from scratch.",
+            text: "This wasn't a one-off campaign. The team needed a system that could keep producing without slowing down. So we built one.",
+          },
+          {
+            type: "p",
+            text: "Strategy started where the research left off. Three personas, three angles per drop. Every monthly batch ships as three sets, one per persona, each built around its own message and audience.",
+          },
+          {
+            type: "p",
+            text: "To keep it all straight as volume grew, we set a naming foundation early: batch, persona, ad. So 4.2.1 reads as batch 4, persona 2, ad 1. No guesswork when a file lands in Slack or a feedback round, no mismatched assets in production.",
+          },
+          {
+            type: "p",
+            text: "Every angle starts as a master concept in one Figma file: hero image, headline, sub-headline, copy, legal line, brand mark, CTA. From there it's adaptation, not redrawing.",
+          },
+          {
+            type: "image",
+            src: "/case-studies/bodybar/design/masters.png",
+            alt: "Grid of BODYBAR master ad concepts: hero image, headline, sub-headline, copy, legal, CTA per angle",
+            caption: "Fig. 03. Master concepts in Figma. One source of truth per persona angle.",
+            fit: "contain",
+          },
+          { type: "h3", text: "One master, every channel" },
+          {
+            type: "p",
+            text: "Each master has to live across PPC (Google), Meta, and LinkedIn. Different ratios, safe zones, character limits, legal disclosures. What reads at 1080×1080 breaks at a 728×90 leaderboard. We tune each one so the headline still earns the first scroll-stop.",
           },
           {
             type: "list",
             marker: "check",
             items: [
-              "PPC / Google Ads — search and display placements",
-              "Meta — image and video creative across all three persona angles",
-              "LinkedIn — professional-audience targeting for white-collar investors",
+              "PPC / Google: responsive search ads plus display banners (leaderboard, MPU, half-page, skyscraper).",
+              "Meta: 1:1 feed, 4:5 portrait, 9:16 stories and reels. Image and video variants per persona angle.",
+              "LinkedIn: single-image and document ads, sized for the professional feed and the investment audience.",
+              "Legal: franchise disclosure copy and small-print lines tuned per channel and geography.",
+              "Readability: type sizes, contrast, and hierarchy re-tuned per format so nothing gets lost.",
             ],
           },
           {
             type: "imagePair",
+            fit: "contain",
             items: [
-              { src: placeholder("Master design — Power Couples angle", "#F97316", "4/3"), label: "Master", caption: "Master design — one source of truth per persona angle." },
-              { src: placeholder("Channel variants — PPC / Meta / LinkedIn", "#F97316", "4/3"), label: "Variants", caption: "Componentized variants across every channel and ratio." },
+              { src: "/case-studies/bodybar/design/meta.png", label: "Meta", caption: "Meta variants: feed, portrait, stories, reels, all sizes.", fit: "contain" },
+              { src: "/case-studies/bodybar/design/ppc.png", label: "PPC", caption: "Google display variants across every banner ratio.", fit: "contain" },
             ],
           },
-          { type: "h3", text: "AI in the workflow" },
+          { type: "h3", text: "Built to scale" },
           {
             type: "p",
-            text: "AI was a real force-multiplier here. It compressed the research phase — faster competitor scanning, audience synthesis, persona framing. On the production side it helped generate graphic assets and batch-export into every channel format. More time on strategy and creative judgment, less on repetitive resize work.",
+            text: "Every master is a system of nested components. Headline, sub-headline, copy, legal line, CTA, brand mark, photo slot, all instances of base components. Channel frames reuse those same instances with auto-layout and constraints.",
+          },
+          {
+            type: "p",
+            text: "Change the master once, every variant updates. Swap a hero photo, rewrite a CTA, ship dozens of placements without touching individual files. When legal asks for a one-word change on the franchise disclosure, it lands across every format in seconds.",
+          },
+          {
+            type: "p",
+            text: "This is what makes the cadence work: a new set of 20 ads per month since April, with full ratio adaptations across PPC, Meta, and LinkedIn. Same system, new angle every month.",
+          },
+          { type: "h3", text: "AI in the loop" },
+          {
+            type: "p",
+            text: "AI sped up the slow parts on both ends. Research: faster competitor scanning, audience synthesis, persona framing. Production: supporting graphic assets, alternate hero treatments, and (most usefully) automated export of every component variant at the right size, ratio, and weight per channel. No one clicking through Figma's export panel one ad at a time.",
+          },
+          {
+            type: "p",
+            text: "More time on creative judgment. Less on the repetitive work.",
           },
         ],
       },
       {
         id: "results",
         label: "Results",
-        heading: "567 leads — and a roadmap.",
+        heading: "567 leads, and a roadmap.",
         blocks: [
           {
             type: "p",
-            text: "567 leads across five months. But the more valuable outcome was clarity on what actually works — which angles convert, which channels qualify, and where to put the budget next.",
+            text: "567 leads across five months. But the more valuable outcome was clarity on what actually works: which angles convert, which channels qualify, and where to put the budget next.",
           },
           {
             type: "statPills",
@@ -505,24 +700,24 @@ export const CASE_STUDIES: CaseStudy[] = [
               { value: "567", label: "total leads" },
               { value: "4", label: "qualified from Power Couples" },
               { value: "0", label: "qualified from all other Meta creatives" },
-              { value: "78–80%", label: "organic qualification rate" },
-              { value: "~23–27%", label: "broad paid qualification rate" },
+              { value: "78 to 80%", label: "organic qualification rate" },
+              { value: "~23 to 27%", label: "broad paid qualification rate" },
             ],
           },
           {
             type: "image",
-            src: placeholder("Results — Power Couples vs. other Meta creatives", "#F97316", "16/9"),
-            alt: "Bar chart comparing Power Couples leads vs. other creative angles",
-            caption: "Fig. 03 — Power Couples was the only Meta creative producing qualified investors. Every other angle: zero.",
+            src: "/case-studies/bodybar/results/feed.png",
+            alt: "BODYBAR ad in a real iPhone feed",
+            fit: "cover",
           },
           { type: "h3", text: "What this means" },
           {
             type: "list",
             marker: "check",
             items: [
-              "Scale the Power Couples creative — it's the only Meta angle with qualified output",
+              "Scale the Power Couples creative; it's the only Meta angle with qualified output",
               "Cut channels that bring volume but no qualified investors",
-              "Double down on the franchise website and organic — 78–80% qualification vs. 23–27% from broad paid",
+              "Double down on the franchise website and organic: 78 to 80% qualification vs. 23 to 27% from broad paid",
               "Search and Performance Max (not Display) are driving the qualified Google leads",
             ],
           },
@@ -534,30 +729,319 @@ export const CASE_STUDIES: CaseStudy[] = [
       },
     ],
     conclusion: {
-      quote: "Five months of campaigns gave us more than leads — they gave us a clear map of what converts and what doesn't. That's the kind of output that actually changes how a brand spends its next dollar.",
+      quote: "Five months of campaigns gave us more than leads. They gave us a clear map of what converts and what doesn't. That's the kind of output that actually changes how a brand spends its next dollar.",
       body: "The Power Couples insight alone was worth the entire engagement. Good creative strategy pays for itself.",
       signoff: "Thank you for reading!",
     },
   },
   {
     id: "rapid-garden",
-    title: "Rapid Garden — Growth Through Design",
+    title: "RapidGarden POS: Growth Through UX",
     shortTitle: "Rapid Garden",
     company: "Omni Common",
-    year: "2025",
-    role: "UX Design, Web Design",
-    deliverables: "Web Design, CMS, Visual Identity",
+    year: "2025 to 2026",
+    role: "UX/UI Design, Product Design",
+    deliverables: "Design System, Responsive Templates, Blog Redesign, PR Strategy",
     tagline: "Grow with intention.",
     cover: "/covers/rapid-garden.png",
+    coverCarousel: [
+      "/case-studies/rapid-garden/cover/1.png",
+      "/case-studies/rapid-garden/cover/2.png",
+      "/case-studies/rapid-garden/cover/3.png",
+    ],
     accent: "#4ADE80",
     size: "tall",
-    metrics: [],
-    overview: "",
-    challenge: "",
-    tags: ["Web Design", "Visual Identity", "CMS"],
+    metrics: [
+      { label: "MQL volume lift", value: "+157%" },
+      { label: "Organic form conversion", value: "+62%" },
+      { label: "YoY engagement rate", value: "+90%" },
+      { label: "Cost per lead", value: "-55%" },
+    ],
+    overview:
+      "RapidGarden POS, part of the RapidPOS family serving specialty retail verticals like garden centers and gun stores, had stagnant growth, inconsistent lead quality, and a digital experience that read like a 2008 WordPress theme. Using marketing data as user research, we ran a comprehensive UX optimization: a new design system aligned to the RapidPOS ecosystem, responsive templates specified at every breakpoint, and a redesigned blog with a refreshed PR strategy.",
+    challenge:
+      "Strong product, broken destination. Spammy forms polluted the sales pipeline, generic landing pages bounced traffic, and the visual identity was completely disconnected from the RapidPOS parent brand.",
+    tags: ["UX Strategy", "Web Design", "Design System", "Responsive"],
+    kinds: ["UX/UI", "WEB"],
     images: [],
     url: "/case/rapid-garden",
-    body: [],
+    body: [
+      {
+        id: "snapshot",
+        label: "Snapshot",
+        heading: "The work at a glance.",
+        blocks: [
+          {
+            type: "p",
+            text: "RapidGarden POS is part of the RapidPOS family, the point-of-sale platform serving specialty retail like garden centers and gun stores. Strong product. Loyal customers. But the site looked stuck in 2008, the forms were full of spam, and traffic was bouncing before it had a chance to convert.",
+          },
+          {
+            type: "p",
+            text: "Garden was their highest-leverage vertical: 200+ loyal garden centers already in the customer base, 12,000 in the addressable market, and a CEO who'd already drawn a line in the sand. My job was to lead the UX optimization that turned that bet into pipeline.",
+          },
+          {
+            type: "metricCards",
+            items: [
+              { value: "+157%", label: "MQL volume", sub: "Best month on record after the relaunch." },
+              { value: "+62%", label: "Organic form conversion", sub: "Validating the new templates and page relevance." },
+              { value: "+90%", label: "YoY engagement", sub: "Across the entire site." },
+              { value: "-55%", label: "Cost per lead", sub: "From peak levels, off the back of cleaner data." },
+            ],
+          },
+        ],
+      },
+      {
+        id: "goals",
+        label: "Goals & Challenges",
+        heading: "Strong product, broken destination.",
+        blocks: [
+          {
+            type: "p",
+            text: "RapidGarden had a real business problem hiding behind a digital one. Sales was drowning in spam leads. The marketing dollar wasn't converting. And the brand felt nothing like its parent company. Before we could grow the funnel, we had to fix the destination people were landing on.",
+          },
+          {
+            type: "quote",
+            text: "If we crush it at Specialty Grocery and Garden, that's all the growth we need.",
+          },
+          {
+            type: "image",
+            src: "/case-studies/rapid-garden/goals/old-home.png",
+            alt: "Legacy RapidGarden home page with outdated 2008-era design and inconsistent layout",
+            caption: "The site we inherited: heavy page loads, inconsistent UI, and a brand disconnected from RapidPOS.",
+          },
+          { type: "h3", text: "Pain points" },
+          {
+            type: "list",
+            marker: "x",
+            items: [
+              "Spam-prone forms polluted the pipeline and frustrated sales with unqualified leads",
+              "Generic user journeys: paid and organic traffic both landed on unoptimized pages",
+              "Outdated UI that resembled a 2008 WordPress theme, with major visual inconsistencies",
+              "Heavy page loads created friction before users could even consume the content",
+              "Brand disconnect from RapidPOS, failing to leverage the parent company's authority",
+            ],
+          },
+          { type: "h3", text: "Three objectives" },
+          {
+            type: "objectives",
+            items: [
+              { emoji: "🌱", label: "Optimize the destination", sub: "Stop chasing more traffic. Convert the traffic we already had." },
+              { emoji: "📐", label: "Design with depth", sub: "Templates designed with the team, specified end to end at every breakpoint." },
+              { emoji: "🔗", label: "Align the ecosystem", sub: "Make RapidGarden feel like a natural extension of RapidPOS, not a separate brand." },
+            ],
+          },
+        ],
+      },
+      {
+        id: "research",
+        label: "Research & Discovery",
+        heading: "Where trust was breaking.",
+        blocks: [
+          {
+            type: "p",
+            text: "Before redesigning anything, I wanted to understand why the site wasn't converting. We didn't have the budget for formal user interviews, but the marketing data was already sitting in front of us. So was the answer.",
+          },
+          {
+            type: "p",
+            text: "Three signals kept showing up. All pointing at the same problem: the old site was breaking trust before users could even start evaluating the product.",
+          },
+          { type: "h3", text: "Signal 1: First impressions didn't hold up" },
+          {
+            type: "p",
+            text: "The site looked stuck in 2008. Heavy page loads, inconsistent visuals, a brand that felt nothing like its parent company. For a buyer landing fresh, that's a credibility gap before they read a single word.",
+          },
+          {
+            type: "p",
+            text: "The marketing side told the same story. Only 6% of organic traffic was non-branded. The site wasn't earning new visitors who didn't already know the company. No discovery engine, because there was nothing on the page worth discovering.",
+          },
+          {
+            type: "statPills",
+            items: [
+              { value: "6%", label: "non-branded organic traffic" },
+              { value: "200+", label: "existing garden center customers" },
+              { value: "12,000", label: "TAM in the vertical" },
+            ],
+          },
+          {
+            type: "image",
+            src: "/case-studies/rapid-garden/research/old-blog.png",
+            alt: "Legacy RapidGarden blog page showing dated layout and content disconnected from buyer intent",
+            caption: "The old blog spoke product features in a dated layout. Search data said buyers were looking for help with operational pain.",
+          },
+          { type: "h3", text: "Signal 2: The forms broke the contract" },
+          {
+            type: "p",
+            text: "A meaningful chunk of form submissions were spam. From the user side, a leaky, friction-heavy form sends a clear message: this company doesn't have its act together. From the marketing side, the same spam was poisoning Google's conversion signals, training campaigns to chase the wrong audience and feeding sales leads they couldn't trust.",
+          },
+          {
+            type: "p",
+            text: "Same problem, read two ways. The fix wouldn't live in the form itself, it would live in the trust the page earned before users got there.",
+          },
+          { type: "h3", text: "Signal 3: The pages didn't speak the buyer's language" },
+          {
+            type: "p",
+            text: "Search queries told us users weren't shopping for \"POS software.\" They were searching for operational pain: inventory overflows, dead stock, checkout speed, plant label printing. Real problems, in their own words.",
+          },
+          {
+            type: "p",
+            text: "The site spoke product features. That's a trust gap before it's a conversion gap. If you can't show me you understand my problem, I'm not going to trust you to solve it.",
+          },
+        ],
+      },
+      {
+        id: "strategy",
+        label: "Strategy",
+        heading: "Stop chasing traffic. Build a destination worth arriving at.",
+        blocks: [
+          {
+            type: "p",
+            text: "Once the trust gaps were obvious, the strategy was obvious too. We shifted the work from \"drive more traffic\" to \"earn the visit.\" Every touchpoint had to do its job before we asked users to convert.",
+          },
+          { type: "h3", text: "Four moves, in order" },
+          {
+            type: "list",
+            marker: "check",
+            items: [
+              "A new design system aligned to the RapidPOS ecosystem, so RapidGarden could borrow the parent brand's authority",
+              "Responsive templates designed with the team under the new identity, each one shaped around a specific vertical",
+              "Breakpoint-level depth across every template: desktop, tablet, mobile, all specified end to end",
+              "Blog redesign with a new post template and a refreshed PR strategy, so content actually compounded",
+            ],
+          },
+        ],
+      },
+      {
+        id: "ux",
+        label: "UX/UI Design",
+        heading: "Designing every surface with the team.",
+        blocks: [
+          { type: "h3", text: "Ecosystem alignment" },
+          {
+            type: "p",
+            text: "Trust starts with first impressions, so we fixed the brand disconnect first. The team and I pulled apart the parent RapidPOS site and built a cohesive identity for RapidGarden that felt like a natural extension of the ecosystem. Same visual language. Same authority. Same trust signals.",
+          },
+          {
+            type: "p",
+            text: "Then we used it to overhaul the site end to end. Out went the 2008-era theme. In came sub-100KB WebP imagery and a modernized UI that loaded fast and let the content actually land.",
+          },
+          {
+            type: "carousel",
+            aspect: "3992/2339",
+            items: [
+              {
+                src: "/case-studies/rapid-garden/ux/rapid-garden-home.png",
+                alt: "New RapidGarden home page in the aligned design system",
+                label: "RapidGarden",
+                caption: "RapidGarden as a natural extension of the ecosystem.",
+              },
+              {
+                src: "/case-studies/rapid-garden/ux/rapid-pos.png",
+                alt: "RapidPOS parent site reference",
+                label: "Parent brand",
+                caption: "RapidPOS, the parent brand we borrowed authority from.",
+              },
+            ],
+          },
+          { type: "h3", text: "Templates with breakpoint-level depth" },
+          {
+            type: "p",
+            text: "Generic pages were bouncing traffic, so we developed a new set of templates under the new identity. The team's input shaped the structure and content of every page, with each template designed around a specific vertical instead of the abstract \"POS buyer.\"",
+          },
+          {
+            type: "p",
+            text: "Every template shipped with breakpoint-level depth. Desktop, tablet, mobile, all specified end to end, with no fallback layouts and no compressed afterthoughts. Engineering could build with zero guesswork.",
+          },
+          {
+            type: "p",
+            text: "The principle behind every page: write for the decision-maker, not the product. Meet them at their operational pain, then earn the next click.",
+          },
+          {
+            type: "image",
+            src: "/case-studies/rapid-garden/ux/breakpoints.png",
+            alt: "Vertical templates specified across desktop, tablet, and mobile breakpoints",
+            caption: "Templates designed with the team, specified for every breakpoint.",
+          },
+          {
+            type: "sectionBreak",
+            src: "/case-studies/rapid-garden/ux/visual-break.png",
+            alt: "RapidGarden POS templates shown across mobile, tablet, and desktop breakpoints",
+          },
+          { type: "h3", text: "Blog, post template, and a PR strategy" },
+          {
+            type: "p",
+            text: "We audited every existing post, then redesigned the blog from the ground up. A cleaner blog interface, a new post template that gave editorial room to breathe, and an information architecture that made content findable instead of buried.",
+          },
+          {
+            type: "p",
+            text: "To anchor the new program, we published an original research study on garden center loyalty programs. The headline finding: 30% of garden centers running loyalty programs generate 56% of participating stores' revenue. One stat gave RapidGarden a credible, data-backed voice in industry conversations.",
+          },
+          {
+            type: "p",
+            text: "Paired with a refreshed PR strategy, the study landed in front of the industry press it was built for. The content didn't just sit on the blog. It compounded.",
+          },
+          {
+            type: "image",
+            src: "/case-studies/rapid-garden/ux/blog-post-template.png",
+            alt: "Redesigned blog post template with cleaner editorial layout",
+            caption: "A new post template that gave editorial room to breathe, paired with a PR strategy that put the work in front of the industry.",
+          },
+          {
+            type: "image",
+            src: "/case-studies/rapid-garden/ux/blog-design.png",
+            alt: "Redesigned RapidGarden blog index with structured content map and cleaner editorial layout",
+            caption: "The redesigned blog index. Structured content map, clearer hierarchy, and metadata that helped users find what they came for.",
+          },
+        ],
+      },
+      {
+        id: "results",
+        label: "Results",
+        heading: "From digital footnote to growth engine.",
+        blocks: [
+          {
+            type: "p",
+            text: "By shifting from volume to precision, the numbers landed where they needed to. The relaunch produced RapidGarden's best month on record for MQLs, and the qualification data finally matched what sales actually needed.",
+          },
+          {
+            type: "sectionBreak",
+            src: "/case-studies/rapid-garden/results/ornament.png",
+            alt: "RapidGarden POS relaunch visual",
+          },
+          {
+            type: "statPills",
+            items: [
+              { value: "+62%", label: "organic form fill conversion" },
+              { value: "+36%", label: "paid traffic form fill rate" },
+              { value: "+90%", label: "engagement rate YoY" },
+              { value: "+60%", label: "organic engaged sessions" },
+              { value: "-55%", label: "cost per lead from peak" },
+              { value: "+157%", label: "monthly MQL volume" },
+            ],
+          },
+          {
+            type: "quote",
+            text: "Sustainable growth isn't about driving more traffic. It's about designing a destination people actually trust.",
+          },
+          { type: "h3", text: "Key takeaways" },
+          {
+            type: "list",
+            marker: "check",
+            items: [
+              "Trust is the lens. Every fix (visual, brand, template, content) had to close a trust gap before it could move a metric.",
+              "Marketing data doubles as user research. The same signal that broke conversion broke the experience.",
+              "Design with the team, not for the team. Vertical templates land harder when the people who own those verticals shape them.",
+              "Depth at every breakpoint isn't optional. Mobile isn't a fallback. It's where most of the buyer journey actually happens.",
+              "Brand ecosystem alignment compounds. Trust earned by the parent transfers to the vertical, for free.",
+            ],
+          },
+        ],
+      },
+    ],
+    conclusion: {
+      quote: "RapidGarden didn't need more traffic. It needed a destination worth arriving at.",
+      body: "Fix the trust gaps, and the metrics follow. The work was less about driving people to the site and more about earning the visit once they got there.",
+      signoff: "Thank you for reading!",
+    },
   },
   {
     id: "mp",
@@ -595,6 +1079,7 @@ export const CASE_STUDIES: CaseStudy[] = [
     challenge:
       "The original site attempted to collect a myriad of information in challenging-to-navigate boxes. After submitting a quote, users had to wait for a CSR to call them — not the ideal experience for a digital-first audience.",
     tags: ["UX Design", "Creative Direction", "Design System", "CMS"],
+    kinds: ["UX/UI"],
     images: ["/case-studies/mp-01.png", "/case-studies/mp-02.png", "/case-studies/mp-03.png", "/case-studies/mp-04.png"],
     url: "https://www.rodriwu.com/mp",
     body: [
@@ -985,6 +1470,7 @@ export const CASE_STUDIES: CaseStudy[] = [
     challenge:
       "The old system was one giant form with zero feedback after submit. Users abandoned it, often.",
     tags: ["UX Design", "UI Design", "Booking Flow", "B2C"],
+    kinds: ["UX/UI"],
     images: [],
     url: "/case/pp",
     body: [
@@ -1309,6 +1795,7 @@ export const CASE_STUDIES: CaseStudy[] = [
     challenge:
       "Phone agents (CSRs) typically coordinate customers' moves using the Hahdmin dashboard — an in-house platform built to handle the logistics of moving and communicate with Porch partners & customers. However, our previous systems lacked direct SMS integration, which made it challenging to connect and share information.",
     tags: ["UX Design", "Internal Tools", "SMS", "Workflow"],
+    kinds: ["UX"],
     images: [],
     url: "/case/hdmn",
     nextCaseId: "talitha",
@@ -1577,6 +2064,7 @@ export const CASE_STUDIES: CaseStudy[] = [
     challenge:
       "The site looked dated, filters confused people, and the checkout dragged on. Conversion was leaking everywhere. We had to make it feel modern, fast, and trustworthy, without breaking what already worked.",
     tags: ["UX Design", "Creative Direction", "Design System", "Conversion"],
+    kinds: ["UX/UI"],
     images: [],
     url: "/case/hah",
     body: [
@@ -1971,6 +2459,31 @@ export const CASE_STUDIES: CaseStudy[] = [
     },
   },
   {
+    id: "skincare-junkie",
+    title: "Skincare Junkie · Campaigns 2025 by Omni Common",
+    shortTitle: "Skincare Junkie",
+    company: "Omni Common",
+    year: "2025",
+    role: "Creative Direction, Art Direction",
+    deliverables: "Campaign Art Direction, Social Assets",
+    tagline: "Campaigns 2025.",
+    cover: "/covers/skincare-junkie.png",
+    accent: "#f472b6",
+    size: "small",
+    metrics: [
+      { label: "Campaigns", value: "Series" },
+      { label: "Year", value: "2025" },
+    ],
+    overview:
+      "Campaign art direction and social assets for Skincare Junkie. Full project on Behance.",
+    challenge: "",
+    tags: ["Campaign", "Art Direction", "Social"],
+    kinds: ["SOCIAL"],
+    images: [],
+    url: "https://www.behance.net/gallery/242050641/Skincare-Junkie-Campaigns-2025-by-OC",
+    external: true,
+  },
+  {
     id: "ruttis",
     title: "Ruttis, A Candyshop Brand",
     shortTitle: "Ruttis",
@@ -1991,33 +2504,9 @@ export const CASE_STUDIES: CaseStudy[] = [
       "Brand identity and packaging for a small-batch candy shop. Full project on Behance.",
     challenge: "",
     tags: ["Brand", "Illustration", "Packaging"],
+    kinds: ["BRAND"],
     images: [],
     url: "https://www.behance.net/gallery/170035285/Dulceria-Ruttis-Branding",
-    external: true,
-  },
-  {
-    id: "skincare-junkie",
-    homeGallery: false,
-    title: "Skincare Junkie · Campaigns 2025 by Omni Common",
-    shortTitle: "Skincare Junkie",
-    company: "Omni Common",
-    year: "2025",
-    role: "Creative Direction, Art Direction",
-    deliverables: "Campaign Art Direction, Social Assets",
-    tagline: "Campaigns 2025.",
-    cover: "/covers/skincare-junkie.png",
-    accent: "#f472b6",
-    size: "small",
-    metrics: [
-      { label: "Campaigns", value: "Series" },
-      { label: "Year", value: "2025" },
-    ],
-    overview:
-      "Campaign art direction and social assets for Skincare Junkie. Full project on Behance.",
-    challenge: "",
-    tags: ["Campaign", "Art Direction", "Social"],
-    images: [],
-    url: "https://www.behance.net/gallery/242050641/Skincare-Junkie-Campaigns-2025-by-OC",
     external: true,
   },
   {
@@ -2041,6 +2530,7 @@ export const CASE_STUDIES: CaseStudy[] = [
       "Brand identity for Squeedr. Full project on Behance.",
     challenge: "",
     tags: ["Brand", "Identity"],
+    kinds: ["BRAND"],
     images: [],
     url: "https://www.behance.net/gallery/184563123/Squeedr-Branding",
     external: true,

@@ -42,8 +42,8 @@ export default function AboutPage() {
   const { isDark } = useShell();
 
   const ink  = isDark ? "rgba(255,255,255,0.92)" : "rgba(10,12,35,0.90)";
-  const body = isDark ? "rgba(255,255,255,0.64)" : "rgba(10,12,35,0.60)";
-  const dim  = isDark ? "rgba(255,255,255,0.40)" : "rgba(10,12,35,0.42)";
+  const body = isDark ? "rgba(255,255,255,0.64)" : "rgba(10,12,35,0.76)";
+  const dim  = isDark ? "rgba(255,255,255,0.40)" : "rgba(10,12,35,0.58)";
   const fade = isDark ? "rgba(255,255,255,0.14)" : "rgba(10,12,35,0.14)";
   const pill = isDark ? "rgba(255,255,255,0.07)" : "rgba(10,12,35,0.06)";
   const pillBorder = isDark ? "rgba(255,255,255,0.10)" : "rgba(10,12,35,0.12)";

@@ -24,8 +24,8 @@ export default function UnavailableModal() {
 
   const surface = isDark ? "#15172b" : "#ffffff";
   const ink     = isDark ? "rgba(255,255,255,0.94)" : "rgba(10,12,35,0.92)";
-  const body    = isDark ? "rgba(255,255,255,0.66)" : "rgba(10,12,35,0.62)";
-  const dim     = isDark ? "rgba(255,255,255,0.42)" : "rgba(10,12,35,0.45)";
+  const body    = isDark ? "rgba(255,255,255,0.66)" : "rgba(10,12,35,0.78)";
+  const dim     = isDark ? "rgba(255,255,255,0.42)" : "rgba(10,12,35,0.60)";
   const fade    = isDark ? "rgba(255,255,255,0.12)" : "rgba(10,12,35,0.12)";
 
   return (

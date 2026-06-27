@@ -21,7 +21,7 @@ export default function MobileNav() {
   const [open, setOpen] = useState(false);
 
   const ink  = isDark ? "rgba(255,255,255,0.92)" : "rgba(10,12,35,0.90)";
-  const dim  = isDark ? "rgba(255,255,255,0.38)" : "rgba(10,12,35,0.38)";
+  const dim  = isDark ? "rgba(255,255,255,0.38)" : "rgba(10,12,35,0.54)";
   const bg   = isDark ? "#121212" : "#d2d0c8";
 
   const handleNavClick = (href: string, hash: string | null) => {

@@ -49,8 +49,8 @@ body {
    Painted directly into the body background with background-attachment: fixed,
    so it stays put as content scrolls past — like paper underneath. */
 html.light body {
-  background-color: #d2d0c8;
-  background-image: radial-gradient(rgba(10, 12, 35, 0.10) 0.7px, transparent 0.9px);
+  background-color: #e9e9e7;
+  background-image: radial-gradient(rgba(10, 12, 35, 0.12) 0.7px, transparent 0.9px);
   background-size: 28px 28px;
   background-attachment: fixed;
   color: #0a0a0a;
@@ -131,10 +131,10 @@ html:not(.light) body {
 
 /* ── Light mode ── */
 .light {
-  --taskbar-bg: rgba(210, 208, 200, 0.96);
-  --taskbar-border: rgba(0, 0, 20, 0.10);
-  --taskbar-icon: rgba(20, 25, 60, 0.52);
-  --taskbar-icon-hover: rgba(20, 25, 60, 0.90);
+  --taskbar-bg: #e9e9e7;
+  --taskbar-border: rgba(0, 0, 20, 0.08);
+  --taskbar-icon: rgba(20, 25, 60, 0.62);
+  --taskbar-icon-hover: rgba(20, 25, 60, 0.94);
   --taskbar-icon-active-bg: rgba(20, 25, 60, 0.10);
   --taskbar-icon-active-border: rgba(20, 25, 60, 0.08);
   --taskbar-icon-press-bg: rgba(20, 25, 60, 0.07);

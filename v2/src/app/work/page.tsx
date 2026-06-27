@@ -22,8 +22,8 @@ export default function WorkPage() {
 
   const accent = isDark ? "#CFF24A" : "#7B5CF6";
   const ink    = isDark ? "rgba(255,255,255,0.94)" : "rgba(10,12,35,0.92)";
-  const body   = isDark ? "rgba(255,255,255,0.66)" : "rgba(10,12,35,0.62)";
-  const dim    = isDark ? "rgba(255,255,255,0.40)" : "rgba(10,12,35,0.42)";
+  const body   = isDark ? "rgba(255,255,255,0.66)" : "rgba(10,12,35,0.78)";
+  const dim    = isDark ? "rgba(255,255,255,0.40)" : "rgba(10,12,35,0.58)";
   const fade   = isDark ? "rgba(255,255,255,0.10)" : "rgba(10,12,35,0.12)";
 
   const pad = (n: number) => String(n).padStart(2, "0");
@@ -112,7 +112,7 @@ export default function WorkPage() {
                 >
                   {/* eslint-disable-next-line @next/next/no-img-element */}
                   <img
-                    src={cs.cover}
+                    src={cs.galleryCover ?? cs.cover}
                     alt=""
                     aria-hidden="true"
                     style={{ width: "100%", height: "100%", objectFit: "cover", objectPosition: "center", display: "block" }}

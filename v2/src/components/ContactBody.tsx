@@ -49,8 +49,8 @@ export default function ContactBody() {
   const [focused, setFocused] = useState<string | null>(null);
 
   const ink   = isDark ? "rgba(255,255,255,0.94)" : "rgba(10,12,35,0.92)";
-  const body  = isDark ? "rgba(255,255,255,0.62)" : "rgba(10,12,35,0.60)";
-  const dim   = isDark ? "rgba(255,255,255,0.40)" : "rgba(10,12,35,0.42)";
+  const body  = isDark ? "rgba(255,255,255,0.62)" : "rgba(10,12,35,0.76)";
+  const dim   = isDark ? "rgba(255,255,255,0.40)" : "rgba(10,12,35,0.58)";
   const fade  = isDark ? "rgba(255,255,255,0.10)" : "rgba(10,12,35,0.12)";
   const focus = isDark ? "rgba(195,200,232,0.65)" : "rgba(60,66,94,0.55)";
   const fieldBg = isDark ? "rgba(255,255,255,0.025)" : "rgba(0,0,0,0.022)";

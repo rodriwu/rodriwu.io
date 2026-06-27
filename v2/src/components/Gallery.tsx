@@ -3,14 +3,14 @@
 import Link from "next/link";
 import { useEffect, useRef, useState } from "react";
 import { motion, useMotionValue, useTransform } from "framer-motion";
-import { ArrowUpRight } from "lucide-react";
+import { ArrowDown, ArrowUpRight } from "lucide-react";
 import { CASE_STUDIES } from "@/data/caseStudies";
 import { useShell } from "./context/ShellContext";
 import CaseCard from "./panels/CaseStudyPanel";
 
 const T = {
-  en: { label: "SELECTED.work", footer: "scroll · or drag the bar", skipToContact: "Skip to contact ↓", viewAll: "View all work", viewAllSub: "Full project archive" },
-  es: { label: "TRABAJO.seleccionado", footer: "scroll · o arrastra la barra", skipToContact: "Ir al contacto ↓", viewAll: "Ver todo", viewAllSub: "Archivo completo de proyectos" },
+  en: { label: "SELECTED.work", footer: "scroll · or drag the bar", skipToContact: "Skip to contact", viewAll: "View all work", viewAllSub: "Full project archive" },
+  es: { label: "TRABAJO.seleccionado", footer: "scroll · o arrastra la barra", skipToContact: "Ir al contacto", viewAll: "Ver todo", viewAllSub: "Archivo completo de proyectos" },
 };
 
 /* Cases visible on the home gallery. Any case with `homeGallery: false` is
@@ -56,8 +56,8 @@ function DesktopStrip({ isDark, t }: { isDark: boolean; t: typeof T["en"] }) {
   const totalCards = HOME_CASES.length + 1;
   const pad = (n: number) => String(n).padStart(2, "0");
 
-  const dim  = isDark ? "rgba(255,255,255,0.42)" : "rgba(10,12,35,0.45)";
-  const fade = isDark ? "rgba(255,255,255,0.20)" : "rgba(10,12,35,0.22)";
+  const dim  = isDark ? "rgba(255,255,255,0.42)" : "rgba(10,12,35,0.60)";
+  const fade = isDark ? "rgba(255,255,255,0.20)" : "rgba(10,12,35,0.36)";
   const ink  = isDark ? "rgba(255,255,255,0.92)" : "rgba(10,12,35,0.90)";
 
   const scrollToContact = (e: React.MouseEvent) => {
@@ -169,16 +169,26 @@ function DesktopStrip({ isDark, t }: { isDark: boolean; t: typeof T["en"] }) {
             href="#contact"
             onClick={scrollToContact}
             aria-label="Skip to contact section"
+            className="rw-skip-contact"
             style={{
-              color: dim,
+              display: "inline-flex",
+              alignItems: "center",
+              gap: 10,
+              padding: "10px 16px",
+              borderRadius: 999,
+              border: `1px solid ${fade}`,
+              background: "transparent",
+              color: ink,
+              fontSize: 12,
+              letterSpacing: "0.14em",
+              textTransform: "uppercase",
               textDecoration: "none",
               cursor: "pointer",
-              transition: "color 0.18s ease",
+              transition: "background 0.18s ease, border-color 0.18s ease",
             }}
-            onMouseEnter={(e) => (e.currentTarget.style.color = ink)}
-            onMouseLeave={(e) => (e.currentTarget.style.color = dim)}
           >
             {t.skipToContact}
+            <ArrowDown size={14} strokeWidth={2} />
           </a>
           <span style={{ color: ink }}>
             {activeIdx < HOME_CASES.length
@@ -202,7 +212,7 @@ function DesktopStrip({ isDark, t }: { isDark: boolean; t: typeof T["en"] }) {
             style={{
               display: "flex",
               alignItems: "center",
-              gap: 48,
+              gap: 80,
               paddingLeft: "clamp(48px, 7vw, 160px)",
               paddingRight: "clamp(48px, 7vw, 160px)",
               x: negTx,
@@ -214,7 +224,7 @@ function DesktopStrip({ isDark, t }: { isDark: boolean; t: typeof T["en"] }) {
                 key={cs.id}
                 style={{
                   flexShrink: 0,
-                  width: "min(72vh, 56vw)",
+                  width: "min(64vh, 50vw)",
                 }}
               >
                 <CaseCard cs={cs} showOverlay />
@@ -224,10 +234,10 @@ function DesktopStrip({ isDark, t }: { isDark: boolean; t: typeof T["en"] }) {
               key="__cta"
               style={{
                 flexShrink: 0,
-                /* Match the height of regular case cards (which are square at min(72vh, 56vw))
+                /* Match the height of regular case cards (which are square at min(64vh, 50vw))
                    but keep a thinner width so it reads as an index entry, not another case. */
-                width: "min(32vh, 22vw)",
-                height: "min(72vh, 56vw)",
+                width: "min(28vh, 20vw)",
+                height: "min(64vh, 50vw)",
               }}
             >
               <WorkCtaCard isDark={isDark} label={t.viewAll} sub={t.viewAllSub} />
@@ -436,9 +446,9 @@ function Scrubber({
    Mobile — 2-col grid with label below each card
    ────────────────────────────────────────────────────────────── */
 function MobileGrid({ isDark, t }: { isDark: boolean; t: typeof T["en"] }) {
-  const dim  = isDark ? "rgba(255,255,255,0.42)" : "rgba(10,12,35,0.45)";
+  const dim  = isDark ? "rgba(255,255,255,0.42)" : "rgba(10,12,35,0.60)";
   const ink  = isDark ? "rgba(255,255,255,0.88)" : "rgba(10,12,35,0.88)";
-  const fade = isDark ? "rgba(255,255,255,0.20)" : "rgba(10,12,35,0.22)";
+  const fade = isDark ? "rgba(255,255,255,0.20)" : "rgba(10,12,35,0.36)";
 
   const scrollToContact = (e: React.MouseEvent) => {
     e.preventDefault();
@@ -473,6 +483,9 @@ function MobileGrid({ isDark, t }: { isDark: boolean; t: typeof T["en"] }) {
           aria-label="Skip to contact section"
           className="font-mono"
           style={{
+            display: "inline-flex",
+            alignItems: "center",
+            gap: 6,
             color: ink,
             textDecoration: "none",
             fontSize: 13,
@@ -483,6 +496,7 @@ function MobileGrid({ isDark, t }: { isDark: boolean; t: typeof T["en"] }) {
           }}
         >
           {t.skipToContact}
+          <ArrowDown size={13} strokeWidth={1.8} />
         </a>
         <span className="font-mono" style={{ fontSize: 10, letterSpacing: "0.18em", color: dim, whiteSpace: "nowrap" }}>
           ↓ scroll
@@ -494,7 +508,7 @@ function MobileGrid({ isDark, t }: { isDark: boolean; t: typeof T["en"] }) {
         style={{
           display: "grid",
           gridTemplateColumns: "1fr 1fr",
-          gap: "20px 16px",
+          gap: "32px 22px",
           width: "100%",
         }}
       >
@@ -532,7 +546,7 @@ function WorkCtaCard({ isDark, label, sub }: { isDark: boolean; label: string; s
   const bg     = isDark ? "rgba(255,255,255,0.04)" : "rgba(10,12,35,0.04)";
   const border = isDark ? "rgba(255,255,255,0.14)" : "rgba(10,12,35,0.16)";
   const ink    = isDark ? "rgba(255,255,255,0.92)" : "rgba(10,12,35,0.92)";
-  const dim    = isDark ? "rgba(255,255,255,0.55)" : "rgba(10,12,35,0.55)";
+  const dim    = isDark ? "rgba(255,255,255,0.55)" : "rgba(10,12,35,0.72)";
   const accent = isDark ? "#CFF24A" : "#7B5CF6";
 
   return (

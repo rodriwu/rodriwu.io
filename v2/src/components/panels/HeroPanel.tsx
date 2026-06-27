@@ -85,8 +85,8 @@ export default function HeroPanel() {
   }, []);
 
   const ink   = isDark ? "rgba(255,255,255,0.92)" : "rgba(10,12,35,0.92)";
-  const dim   = isDark ? "rgba(255,255,255,0.42)" : "rgba(10,12,35,0.45)";
-  const fade  = isDark ? "rgba(255,255,255,0.22)" : "rgba(10,12,35,0.28)";
+  const dim   = isDark ? "rgba(255,255,255,0.42)" : "rgba(10,12,35,0.60)";
+  const fade  = isDark ? "rgba(255,255,255,0.22)" : "rgba(10,12,35,0.44)";
   const accent= isDark ? "rgba(195,200,232,0.85)" : "rgba(60,66,94,0.85)";
 
   const rotating = useTypewriter(t.rotatingWords);

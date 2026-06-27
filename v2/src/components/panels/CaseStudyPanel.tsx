@@ -27,7 +27,7 @@ export default function CaseCard({ cs, aspectRatio = "1 / 1", showOverlay = fals
   const image = (
     /* eslint-disable-next-line @next/next/no-img-element */
     <img
-      src={cs.cover}
+      src={cs.galleryCover ?? cs.cover}
       alt=""
       aria-hidden="true"
       draggable={false}
@@ -38,6 +38,49 @@ export default function CaseCard({ cs, aspectRatio = "1 / 1", showOverlay = fals
         pointerEvents: "none",
       }}
     />
+  );
+
+  const kinds = cs.kinds && cs.kinds.length > 0 && (
+    <div
+      aria-hidden="true"
+      style={{
+        position: "absolute",
+        top: "clamp(12px, 1.4vw, 16px)",
+        right: "clamp(12px, 1.4vw, 16px)",
+        display: "flex",
+        flexWrap: "wrap",
+        justifyContent: "flex-end",
+        gap: 6,
+        pointerEvents: "none",
+        zIndex: 2,
+        maxWidth: "70%",
+      }}
+    >
+      {cs.kinds!.map((k) => (
+        <span
+          key={k}
+          className="font-mono"
+          style={{
+            display: "inline-flex",
+            alignItems: "center",
+            padding: "4px 8px",
+            fontSize: 9,
+            letterSpacing: "0.14em",
+            color: "rgba(255,255,255,0.92)",
+            background: "rgba(0,0,0,0.42)",
+            border: "1px solid rgba(255,255,255,0.16)",
+            borderRadius: 4,
+            backdropFilter: "blur(6px)",
+            WebkitBackdropFilter: "blur(6px)",
+            textTransform: "uppercase",
+            lineHeight: 1,
+            whiteSpace: "nowrap",
+          }}
+        >
+          {k}
+        </span>
+      ))}
+    </div>
   );
 
   const overlay = showOverlay && (
@@ -102,6 +145,7 @@ export default function CaseCard({ cs, aspectRatio = "1 / 1", showOverlay = fals
           style={{ ...sharedStyle, background: "transparent", border: "none", padding: 0, cursor: "pointer", textAlign: "left" }}
         >
           {image}
+          {kinds}
           {overlay}
         </button>
       ) : cs.external ? (
@@ -115,6 +159,7 @@ export default function CaseCard({ cs, aspectRatio = "1 / 1", showOverlay = fals
           style={sharedStyle}
         >
           {image}
+          {kinds}
           {overlay}
         </a>
       ) : (
@@ -126,6 +171,7 @@ export default function CaseCard({ cs, aspectRatio = "1 / 1", showOverlay = fals
           style={sharedStyle}
         >
           {image}
+          {kinds}
           {overlay}
         </Link>
       )}

@@ -26,9 +26,9 @@ export default function ContactPanel() {
   const t = T[locale];
 
   const ink   = isDark ? "rgba(255,255,255,0.94)" : "rgba(10,12,35,0.92)";
-  const body  = isDark ? "rgba(255,255,255,0.62)" : "rgba(10,12,35,0.58)";
-  const dim   = isDark ? "rgba(255,255,255,0.40)" : "rgba(10,12,35,0.42)";
-  const fade  = isDark ? "rgba(255,255,255,0.20)" : "rgba(10,12,35,0.24)";
+  const body  = isDark ? "rgba(255,255,255,0.62)" : "rgba(10,12,35,0.74)";
+  const dim   = isDark ? "rgba(255,255,255,0.40)" : "rgba(10,12,35,0.58)";
+  const fade  = isDark ? "rgba(255,255,255,0.20)" : "rgba(10,12,35,0.38)";
 
   return (
     <section

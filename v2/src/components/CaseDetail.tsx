@@ -11,9 +11,74 @@ import {
   type CaseSection,
   type CaseStudy,
 } from "@/data/caseStudies";
+import { getCaseStudies } from "@/data/caseStudies.i18n";
 
-export default function CaseDetail({ cs }: { cs: CaseStudy }) {
-  const { isDark } = useShell();
+const CHROME_T = {
+  en: {
+    back: "BACK",
+    casePrefix: "CASE",
+    client: "Client",
+    engagement: "Engagement",
+    role: "Role",
+    deliverables: "Deliverables",
+    previous: "Previous",
+    next: "Next",
+    image: (n: number) => `Image ${n}`,
+    previousImage: "Previous image",
+    nextImage: "Next image",
+    goToImage: (n: number) => `Go to image ${n}`,
+    toc: "Table of contents",
+    scrollLeft: "Scroll left",
+    scrollRight: "Scroll right",
+    close: "Close",
+    nextCaseLabel: "NEXT CASE",
+    nextCaseChip: "NEXT",
+    outro: "outro",
+    ctaLead: "Do I have your attention?",
+    ctaHeadline: "Hit me up.",
+    ctaButton: "Get in touch",
+    overview: "OVERVIEW",
+    challenge: "CHALLENGE",
+    gallery: "GALLERY",
+  },
+  es: {
+    back: "VOLVER",
+    casePrefix: "CASO",
+    client: "Cliente",
+    engagement: "Periodo",
+    role: "Rol",
+    deliverables: "Entregables",
+    previous: "Anterior",
+    next: "Siguiente",
+    image: (n: number) => `Imagen ${n}`,
+    previousImage: "Imagen anterior",
+    nextImage: "Imagen siguiente",
+    goToImage: (n: number) => `Ir a la imagen ${n}`,
+    toc: "Tabla de contenidos",
+    scrollLeft: "Desplazar a la izquierda",
+    scrollRight: "Desplazar a la derecha",
+    close: "Cerrar",
+    nextCaseLabel: "SIGUIENTE CASO",
+    nextCaseChip: "SIGUIENTE",
+    outro: "cierre",
+    ctaLead: "¿Tengo tu atención?",
+    ctaHeadline: "Escríbeme.",
+    ctaButton: "Conversemos",
+    overview: "RESUMEN",
+    challenge: "DESAFÍO",
+    gallery: "GALERÍA",
+  },
+} as const;
+
+export default function CaseDetail({ cs: csEn }: { cs: CaseStudy }) {
+  const { isDark, locale } = useShell();
+  const ct = CHROME_T[locale];
+
+  /* Swap in the locale-specific copy of this case (still the same id /
+     ordering, just translated text). Image paths and structural fields
+     stay shared with the English source. */
+  const allCases = getCaseStudies(locale);
+  const cs = allCases.find((c) => c.id === csEn.id) ?? csEn;
 
   const accent = isDark ? "#CFF24A" : "#7B5CF6";
   const ink    = isDark ? "rgba(255,255,255,0.94)" : "rgba(10,12,35,0.92)";
@@ -22,9 +87,9 @@ export default function CaseDetail({ cs }: { cs: CaseStudy }) {
   const fade   = isDark ? "rgba(255,255,255,0.10)" : "rgba(10,12,35,0.12)";
   const cardBg = isDark ? "rgba(255,255,255,0.025)" : "rgba(0,0,0,0.022)";
 
-  const idx  = CASE_STUDIES.findIndex((c) => c.id === cs.id);
-  const next = (cs.nextCaseId ? CASE_STUDIES.find((c) => c.id === cs.nextCaseId) : null)
-    ?? CASE_STUDIES[(idx + 1) % CASE_STUDIES.length];
+  const idx  = allCases.findIndex((c) => c.id === cs.id);
+  const next = (cs.nextCaseId ? allCases.find((c) => c.id === cs.nextCaseId) : null)
+    ?? allCases[(idx + 1) % allCases.length];
   const pad  = (n: number) => String(n).padStart(2, "0");
   const sections = cs.body ?? [];
 
@@ -36,10 +101,10 @@ export default function CaseDetail({ cs }: { cs: CaseStudy }) {
           <Link href="/" className="font-mono inline-flex items-center gap-2"
             style={{ fontSize: 11, letterSpacing: "0.14em", color: dim, textDecoration: "none" }}>
             <ArrowLeft size={13} strokeWidth={1.8} />
-            BACK
+            {ct.back}
           </Link>
           <span className="font-mono" style={{ fontSize: 10, letterSpacing: "0.16em", color: dim }}>
-            CASE·{cs.id.toUpperCase()} · {pad(idx + 1)}/{pad(CASE_STUDIES.length)}
+            {ct.casePrefix}·{cs.id.toUpperCase()} · {pad(idx + 1)}/{pad(CASE_STUDIES.length)}
           </span>
         </div>
 
@@ -72,6 +137,8 @@ function CoverCarousel({
   images: string[]; alt: string;
   cardBg: string; accent: string; dim: string; fade: string;
 }) {
+  const { locale } = useShell();
+  const ct = CHROME_T[locale];
   const [idx, setIdx] = useState(0);
   const [dir, setDir] = useState(1); // 1 = forward, -1 = backward
   const dragStart = useRef(0);
@@ -129,13 +196,13 @@ function CoverCarousel({
         <div style={{ position: "absolute", bottom: 0, left: 0, right: 0, height: 96, background: "linear-gradient(to top, rgba(0,0,0,0.45) 0%, transparent 100%)", pointerEvents: "none", zIndex: 1 }} />
 
         {/* Prev / Next */}
-        <button onClick={prev} aria-label="Previous" style={{ position: "absolute", left: 16, top: "50%", transform: "translateY(-50%)", background: "rgba(0,0,0,0.48)", border: "1px solid rgba(255,255,255,0.12)", borderRadius: "50%", width: 40, height: 40, cursor: "pointer", display: "flex", alignItems: "center", justifyContent: "center", color: "#fff", backdropFilter: "blur(8px)", zIndex: 2, transition: "background 0.18s ease" }}
+        <button onClick={prev} aria-label={ct.previous} style={{ position: "absolute", left: 16, top: "50%", transform: "translateY(-50%)", background: "rgba(0,0,0,0.48)", border: "1px solid rgba(255,255,255,0.12)", borderRadius: "50%", width: 40, height: 40, cursor: "pointer", display: "flex", alignItems: "center", justifyContent: "center", color: "#fff", backdropFilter: "blur(8px)", zIndex: 2, transition: "background 0.18s ease" }}
           onMouseEnter={(e) => (e.currentTarget.style.background = "rgba(0,0,0,0.72)")}
           onMouseLeave={(e) => (e.currentTarget.style.background = "rgba(0,0,0,0.48)")}
         >
           <ArrowLeft size={16} strokeWidth={2} />
         </button>
-        <button onClick={next} aria-label="Next" style={{ position: "absolute", right: 16, top: "50%", transform: "translateY(-50%)", background: "rgba(0,0,0,0.48)", border: "1px solid rgba(255,255,255,0.12)", borderRadius: "50%", width: 40, height: 40, cursor: "pointer", display: "flex", alignItems: "center", justifyContent: "center", color: "#fff", backdropFilter: "blur(8px)", zIndex: 2, transition: "background 0.18s ease" }}
+        <button onClick={next} aria-label={ct.next} style={{ position: "absolute", right: 16, top: "50%", transform: "translateY(-50%)", background: "rgba(0,0,0,0.48)", border: "1px solid rgba(255,255,255,0.12)", borderRadius: "50%", width: 40, height: 40, cursor: "pointer", display: "flex", alignItems: "center", justifyContent: "center", color: "#fff", backdropFilter: "blur(8px)", zIndex: 2, transition: "background 0.18s ease" }}
           onMouseEnter={(e) => (e.currentTarget.style.background = "rgba(0,0,0,0.72)")}
           onMouseLeave={(e) => (e.currentTarget.style.background = "rgba(0,0,0,0.48)")}
         >
@@ -149,7 +216,7 @@ function CoverCarousel({
               <button
                 key={i}
                 onClick={() => go(i, i > idx ? 1 : -1)}
-                aria-label={`Image ${i + 1}`}
+                aria-label={ct.image(i + 1)}
                 style={{ width: i === idx ? 22 : 6, height: 6, borderRadius: 999, background: i === idx ? accent : "rgba(255,255,255,0.35)", border: "none", cursor: "pointer", padding: 0, transition: "width 0.22s ease, background 0.22s ease", flexShrink: 0 }}
               />
             ))}
@@ -180,11 +247,13 @@ function Hero({
     return () => window.removeEventListener("resize", update);
   }, []);
 
+  const { locale } = useShell();
+  const ct = CHROME_T[locale];
   const metaFields = [
-    { label: "Client",       value: cs.shortTitle },
-    { label: "Engagement",   value: cs.year },
-    { label: "Role",         value: cs.role },
-    { label: "Deliverables", value: cs.deliverables },
+    { label: ct.client,       value: cs.shortTitle },
+    { label: ct.engagement,   value: cs.year },
+    { label: ct.role,         value: cs.role },
+    { label: ct.deliverables, value: cs.deliverables },
   ];
 
   return (
@@ -228,6 +297,7 @@ function Hero({
         marginLeft: "calc((100vw - var(--rw-sidebar) - 100%) / -2)",
         marginRight: "calc((100vw - var(--rw-sidebar) - 100%) / -2)",
       }}>
+       <div style={{ maxWidth: 1800, marginInline: "auto" }}>
         <motion.div
           initial={{ opacity: 0, scale: 0.985 }}
           animate={{ opacity: 1, scale: 1 }}
@@ -267,6 +337,7 @@ function Hero({
             );
           })}
         </div>
+       </div>
       </div>
     </header>
   );
@@ -281,6 +352,8 @@ function Body({
   sections: CaseSection[]; accent: string;
   ink: string; body: string; dim: string; fade: string; cardBg: string; isDark: boolean;
 }) {
+  const { locale } = useShell();
+  const ct = CHROME_T[locale];
   const [activeId, setActiveId] = useState<string>(sections[0]?.id ?? "");
   const [pastHero, setPastHero] = useState(false);
   const bodyRootRef = useRef<HTMLDivElement>(null);
@@ -368,7 +441,7 @@ function Body({
         {/* Desktop sticky TOC */}
         {isWide && (
           <aside
-            aria-label="Table of contents"
+            aria-label={ct.toc}
             style={{
               position: "sticky", top: 40, alignSelf: "start",
               opacity: pastHero && !tocCovered ? 1 : 0,
@@ -409,7 +482,7 @@ function Body({
         <div>
           {/* Mobile TOC — static, placed before content */}
           {!isWide && sections.length > 1 && (
-            <nav aria-label="Table of contents" style={{ marginBottom: 40, paddingBottom: 8 }}>
+            <nav aria-label={ct.toc} style={{ marginBottom: 40, paddingBottom: 8 }}>
               <div className="font-mono" style={{ fontSize: 9, letterSpacing: "0.22em", color: dim, marginBottom: 12, textTransform: "uppercase" }}>
                 Contents
               </div>
@@ -1257,6 +1330,8 @@ function PhoneFlow({
   accent: string; ink: string; body: string; dim: string; fade: string; cardBg: string;
   onImageOpen?: (src: string, alt?: string) => void;
 }) {
+  const { locale } = useShell();
+  const ct = CHROME_T[locale];
   /* Mobile: skip the full white card / carousel and show a single composed
      image that already includes the heading, description and every phone. */
   if (isMobile && mobileImage) {
@@ -1378,14 +1453,14 @@ function PhoneFlow({
         <>
           <button
             onClick={() => scrollBy(-1)}
-            aria-label="Scroll left"
+            aria-label={ct.scrollLeft}
             style={{ position: "absolute", left: 16, top: "62%", transform: "translateY(-50%)", background: "rgba(10,12,35,0.78)", border: "1px solid rgba(255,255,255,0.10)", borderRadius: "50%", width: 40, height: 40, cursor: "pointer", display: "flex", alignItems: "center", justifyContent: "center", color: "#ffffff", zIndex: 3, boxShadow: "0 4px 18px rgba(0,0,0,0.18)", backdropFilter: "blur(6px)" }}
           >
             <ArrowLeft size={15} strokeWidth={2} />
           </button>
           <button
             onClick={() => scrollBy(1)}
-            aria-label="Scroll right"
+            aria-label={ct.scrollRight}
             style={{ position: "absolute", right: 16, top: "62%", transform: "translateY(-50%)", background: "rgba(10,12,35,0.78)", border: "1px solid rgba(255,255,255,0.10)", borderRadius: "50%", width: 40, height: 40, cursor: "pointer", display: "flex", alignItems: "center", justifyContent: "center", color: "#ffffff", zIndex: 3, boxShadow: "0 4px 18px rgba(0,0,0,0.18)", backdropFilter: "blur(6px)" }}
           >
             <ArrowRight size={15} strokeWidth={2} />
@@ -1400,6 +1475,8 @@ function PhoneFlow({
    Lightbox
    ────────────────────────────────────────────────────────────── */
 function LightboxOverlay({ src, alt, onClose }: { src: string; alt: string; onClose: () => void }) {
+  const { locale } = useShell();
+  const ct = CHROME_T[locale];
   useEffect(() => {
     const onKey = (e: KeyboardEvent) => { if (e.key === "Escape") onClose(); };
     document.addEventListener("keydown", onKey);
@@ -1414,7 +1491,7 @@ function LightboxOverlay({ src, alt, onClose }: { src: string; alt: string; onCl
       <div onClick={(e) => e.stopPropagation()} style={{ position: "relative", maxWidth: "90vw", maxHeight: "90vh" }}>
         <button
           onClick={onClose}
-          aria-label="Close"
+          aria-label={ct.close}
           style={{ position: "absolute", top: -14, right: -14, zIndex: 1, background: "rgba(30,30,30,0.9)", border: "1px solid rgba(255,255,255,0.12)", borderRadius: "50%", width: 32, height: 32, cursor: "pointer", display: "flex", alignItems: "center", justifyContent: "center", color: "rgba(255,255,255,0.85)" }}
         >
           <X size={14} strokeWidth={2.5} />
@@ -1626,6 +1703,8 @@ function Carousel({
   cardBg: string; accent: string; dim: string; fade: string;
   onImageOpen?: (src: string, alt?: string) => void;
 }) {
+  const { locale } = useShell();
+  const ct = CHROME_T[locale];
   const [idx, setIdx] = useState(0);
   const prev = () => setIdx((i) => (i - 1 + items.length) % items.length);
   const next = () => setIdx((i) => (i + 1) % items.length);
@@ -1647,14 +1726,14 @@ function Carousel({
           <>
             <button
               onClick={(e) => { e.stopPropagation(); prev(); }}
-              aria-label="Previous image"
+              aria-label={ct.previousImage}
               style={{ position: "absolute", left: 10, top: "50%", transform: "translateY(-50%)", background: "rgba(0,0,0,0.52)", border: "none", borderRadius: "50%", width: 34, height: 34, cursor: "pointer", display: "flex", alignItems: "center", justifyContent: "center", color: "rgba(255,255,255,0.9)", backdropFilter: "blur(6px)", zIndex: 1 }}
             >
               <ArrowLeft size={15} strokeWidth={2} />
             </button>
             <button
               onClick={(e) => { e.stopPropagation(); next(); }}
-              aria-label="Next image"
+              aria-label={ct.nextImage}
               style={{ position: "absolute", right: 10, top: "50%", transform: "translateY(-50%)", background: "rgba(0,0,0,0.52)", border: "none", borderRadius: "50%", width: 34, height: 34, cursor: "pointer", display: "flex", alignItems: "center", justifyContent: "center", color: "rgba(255,255,255,0.9)", backdropFilter: "blur(6px)", zIndex: 1 }}
             >
               <ArrowRight size={15} strokeWidth={2} />
@@ -1677,7 +1756,7 @@ function Carousel({
             <button
               key={i}
               onClick={(e) => { e.stopPropagation(); setIdx(i); }}
-              aria-label={`Go to image ${i + 1}`}
+              aria-label={ct.goToImage(i + 1)}
               style={{ width: i === idx ? 18 : 6, height: 6, borderRadius: 999, background: i === idx ? accent : fade, border: "none", cursor: "pointer", padding: 0, transition: "width 0.2s ease, background 0.2s ease" }}
             />
           ))}
@@ -1782,19 +1861,21 @@ function FallbackBody({
 }: {
   cs: CaseStudy; ink: string; body: string; dim: string; fade: string; cardBg: string;
 }) {
+  const { locale } = useShell();
+  const ct = CHROME_T[locale];
   return (
     <article style={{ maxWidth: 1080, margin: "0 auto", padding: "0 clamp(20px, 5vw, 64px) 48px" }}>
       <section style={{ marginBottom: 36 }}>
-        <p className="font-mono" style={{ fontSize: 10, letterSpacing: "0.18em", color: dim, marginBottom: 12 }}>OVERVIEW</p>
+        <p className="font-mono" style={{ fontSize: 10, letterSpacing: "0.18em", color: dim, marginBottom: 12 }}>{ct.overview}</p>
         <p style={{ fontSize: 17, lineHeight: 1.66, color: body, maxWidth: 760 }}>{cs.overview}</p>
       </section>
       <section style={{ marginBottom: 48 }}>
-        <p className="font-mono" style={{ fontSize: 10, letterSpacing: "0.18em", color: dim, marginBottom: 12 }}>CHALLENGE</p>
+        <p className="font-mono" style={{ fontSize: 10, letterSpacing: "0.18em", color: dim, marginBottom: 12 }}>{ct.challenge}</p>
         <p style={{ fontSize: 17, lineHeight: 1.66, color: body, maxWidth: 760 }}>{cs.challenge}</p>
       </section>
       {cs.images.length > 0 && (
         <section style={{ marginBottom: 16 }}>
-          <p className="font-mono" style={{ fontSize: 10, letterSpacing: "0.18em", color: dim, marginBottom: 12 }}>GALLERY</p>
+          <p className="font-mono" style={{ fontSize: 10, letterSpacing: "0.18em", color: dim, marginBottom: 12 }}>{ct.gallery}</p>
           <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(280px, 1fr))", gap: 14 }}>
             {cs.images.map((src, i) => (
               <div key={i} style={{ borderRadius: 12, overflow: "hidden", border: `1px solid ${fade}`, aspectRatio: "4 / 3", background: cardBg }}>
@@ -1898,23 +1979,25 @@ function ContactCTA({
 }: {
   accent: string; ink: string; body: string; dim: string; fade: string;
 }) {
+  const { locale } = useShell();
+  const ct = CHROME_T[locale];
   return (
     <section style={{ marginTop: 24, padding: "56px 0", textAlign: "center" }}>
       <p className="font-mono" style={{ fontSize: 10, letterSpacing: "0.20em", color: dim, marginBottom: 18, display: "flex", alignItems: "center", justifyContent: "center", gap: 8 }}>
         <span style={{ flex: 1, borderTop: `1px solid ${fade}`, maxWidth: 60 }} />
-        <span>outro</span>
+        <span>{ct.outro}</span>
         <span style={{ flex: 1, borderTop: `1px solid ${fade}`, maxWidth: 60 }} />
       </p>
-      <p style={{ fontSize: 18, color: dim, marginBottom: 14 }}>Do I have your attention?</p>
+      <p style={{ fontSize: 18, color: dim, marginBottom: 14 }}>{ct.ctaLead}</p>
       <h2 className="font-mono" style={{ fontSize: "clamp(36px, 4.8vw, 64px)", fontWeight: 500, color: ink, letterSpacing: "-0.04em", lineHeight: 1.05, marginBottom: 22 }}>
-        Hit me up.
+        {ct.ctaHeadline}
       </h2>
       <Link
         href="/#contact"
         className="font-mono inline-flex items-center gap-2"
         style={{ padding: "11px 18px", fontSize: 12, letterSpacing: "0.08em", color: "#0c0e22", background: "var(--accent-highlight)", borderRadius: 6, textDecoration: "none", fontWeight: 500, boxShadow: "0 6px 18px rgba(207,242,74,0.28)" }}
       >
-        Get in touch
+        {ct.ctaButton}
         <ArrowUpRight size={14} strokeWidth={1.8} />
       </Link>
     </section>
@@ -1929,7 +2012,8 @@ function NextCase({
 }: {
   next: CaseStudy; accent: string; ink: string; dim: string; fade: string; cardBg: string;
 }) {
-  const { openUnavailable } = useShell();
+  const { openUnavailable, locale } = useShell();
+  const ct = CHROME_T[locale];
   const cardStyle = { display: "flex", alignItems: "center", justifyContent: "space-between", padding: "22px 24px", borderRadius: 14, background: cardBg, border: `1px solid ${fade}`, textDecoration: "none", transition: "background 0.18s ease, border-color 0.18s ease" } as const;
   const inner = (
     <>
@@ -1940,14 +2024,14 @@ function NextCase({
         <div style={{ fontSize: 20, fontWeight: 500, color: ink, letterSpacing: "-0.02em" }}>{next.title}</div>
       </div>
       <div style={{ display: "flex", alignItems: "center", gap: 8, color: accent, flexShrink: 0 }}>
-        <span className="font-mono" style={{ fontSize: 11, letterSpacing: "0.12em" }}>NEXT</span>
+        <span className="font-mono" style={{ fontSize: 11, letterSpacing: "0.12em" }}>{ct.nextCaseChip}</span>
         <ArrowRight size={16} strokeWidth={2} />
       </div>
     </>
   );
   return (
     <div style={{ paddingTop: 28, marginTop: 36 }}>
-      <p className="font-mono" style={{ fontSize: 10, letterSpacing: "0.18em", color: dim, marginBottom: 14 }}>NEXT CASE</p>
+      <p className="font-mono" style={{ fontSize: 10, letterSpacing: "0.18em", color: dim, marginBottom: 14 }}>{ct.nextCaseLabel}</p>
       {next.unavailable ? (
         <button
           type="button"

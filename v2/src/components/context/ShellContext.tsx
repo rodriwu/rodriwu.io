@@ -43,7 +43,20 @@ export function useShell(): ShellState {
 
 export function ShellProvider({ children }: { children: React.ReactNode }) {
   const [isDark, setIsDark] = useState(true);
-  const [locale, setLocale] = useState<Locale>("en");
+  const [locale, setLocaleState] = useState<Locale>("en");
+
+  /* Restore locale on mount (mirrors the pattern used for theme). */
+  useEffect(() => {
+    try {
+      const saved = localStorage.getItem("v2-locale");
+      if (saved === "es" || saved === "en") setLocaleState(saved);
+    } catch {}
+  }, []);
+
+  const setLocale = (l: Locale) => {
+    setLocaleState(l);
+    try { localStorage.setItem("v2-locale", l); } catch {}
+  };
   const [terminalOpen, setTerminalOpen] = useState(false);
   const [unavailableCase, setUnavailableCase] = useState<string | null>(null);
 

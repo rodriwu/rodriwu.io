@@ -5,8 +5,24 @@ import { AnimatePresence, motion } from "framer-motion";
 import { X } from "lucide-react";
 import { useShell } from "./context/ShellContext";
 
+const T = {
+  en: {
+    close: "Close",
+    title: "This case study is currently unavailable.",
+    body: "Sorry for the inconvenience.",
+    cta: "Got it",
+  },
+  es: {
+    close: "Cerrar",
+    title: "Este caso de estudio no está disponible por el momento.",
+    body: "Perdón por las molestias.",
+    cta: "Entendido",
+  },
+} as const;
+
 export default function UnavailableModal() {
-  const { isDark, unavailableCase, closeUnavailable } = useShell();
+  const { isDark, unavailableCase, closeUnavailable, locale } = useShell();
+  const t = T[locale];
   const open = unavailableCase !== null;
 
   useEffect(() => {
@@ -73,7 +89,7 @@ export default function UnavailableModal() {
             <button
               type="button"
               onClick={closeUnavailable}
-              aria-label="Close"
+              aria-label={t.close}
               style={{
                 position: "absolute",
                 top: 14,
@@ -118,11 +134,11 @@ export default function UnavailableModal() {
                 marginBottom: 14,
               }}
             >
-              This case study is currently unavailable.
+              {t.title}
             </h2>
 
             <p style={{ fontSize: 15, lineHeight: 1.6, color: body, marginBottom: 24 }}>
-              Sorry for the inconvenience.
+              {t.body}
             </p>
 
             <button
@@ -144,7 +160,7 @@ export default function UnavailableModal() {
                 fontWeight: 500,
               }}
             >
-              Got it
+              {t.cta}
             </button>
           </motion.div>
         </motion.div>

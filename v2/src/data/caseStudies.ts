@@ -312,7 +312,7 @@ export const CASE_STUDIES: CaseStudy[] = [
           },
           {
             type: "video",
-            src: "/case-studies/talitha/strategy/hero-video.mp4",
+            src: "https://youtu.be/yIhsDgzuxxA",
             caption: "Fig. 04. Hero video, made with Paul (in-house editor) to lead the homepage with the brand's actual personality.",
           },
         ],

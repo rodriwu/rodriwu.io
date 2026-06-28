@@ -200,6 +200,9 @@ const T = {
     askEmpty:    "Message was empty. Ask cancelled.",
     askCancelled:"(ask cancelled)",
     notFound:    "command not found:",
+    closeWindow: "Close",
+    maximize:    "Maximize",
+    restore:     "Restore",
   },
   es: {
     banner:      "rodriwu.com v2.0 — rodriwu@escritorio",
@@ -261,6 +264,9 @@ const T = {
     askEmpty:    "El mensaje estaba vacío. Cancelado.",
     askCancelled:"(ask cancelado)",
     notFound:    "comando no encontrado:",
+    closeWindow: "Cerrar",
+    maximize:    "Maximizar",
+    restore:     "Restaurar",
   },
 } as const;
 
@@ -520,13 +526,13 @@ export default function Terminal() {
               {/* Stoplight dots — close (red) + maximize (green) only */}
               <button
                 onClick={(e) => { e.stopPropagation(); closeTerminal(); }}
-                aria-label="Close"
-                title="Close"
+                aria-label={t.closeWindow}
+                title={t.closeWindow}
                 style={{ width: 12, height: 12, borderRadius: "50%", background: "rgba(255,95,86,0.95)", border: "none", padding: 0, cursor: "pointer" }}
               />
               <button
-                aria-label={isMaximized ? "Restore" : "Maximize"}
-                title={isMaximized ? "Restore" : "Maximize"}
+                aria-label={isMaximized ? t.restore : t.maximize}
+                title={isMaximized ? t.restore : t.maximize}
                 onClick={(e) => { e.stopPropagation(); setIsMaximized((m) => !m); }}
                 style={{ width: 12, height: 12, borderRadius: "50%", background: "rgba(39,201,63,0.92)", border: "none", padding: 0, cursor: "pointer" }}
               />

@@ -5,10 +5,41 @@ import Link from "next/link";
 import { Sun, Moon, Wifi, Volume2, VolumeX, Globe, ChevronLeft, ChevronRight, Terminal as TerminalIcon, Home } from "lucide-react";
 import { useShell } from "./context/ShellContext";
 
-const DAYS = ["Su", "Mo", "Tu", "We", "Th", "Fr", "Sa"];
-const MONTHS = ["January","February","March","April","May","June","July","August","September","October","November","December"];
+const DAYS = {
+  en: ["Su", "Mo", "Tu", "We", "Th", "Fr", "Sa"],
+  es: ["Do", "Lu", "Ma", "Mi", "Ju", "Vi", "Sá"],
+} as const;
+const MONTHS = {
+  en: ["January","February","March","April","May","June","July","August","September","October","November","December"],
+  es: ["Enero","Febrero","Marzo","Abril","Mayo","Junio","Julio","Agosto","Septiembre","Octubre","Noviembre","Diciembre"],
+} as const;
 
-function MiniCalendar() {
+const T = {
+  en: {
+    aboutMe: "About me",
+    home: "Home",
+    terminal: "Terminal ( ` )",
+    switchLight: "Switch to light",
+    switchDark: "Switch to dark",
+    socials: "Socials",
+    findOnline: "Find me online",
+    unmute: "Unmute",
+    mute: "Mute",
+  },
+  es: {
+    aboutMe: "Sobre mí",
+    home: "Inicio",
+    terminal: "Terminal ( ` )",
+    switchLight: "Cambiar a claro",
+    switchDark: "Cambiar a oscuro",
+    socials: "Redes",
+    findOnline: "Encuéntrame en línea",
+    unmute: "Activar sonido",
+    mute: "Silenciar",
+  },
+} as const;
+
+function MiniCalendar({ locale }: { locale: "en" | "es" }) {
   const today = new Date();
   const [viewYear, setViewYear] = useState(today.getFullYear());
   const [viewMonth, setViewMonth] = useState(today.getMonth());
@@ -34,14 +65,14 @@ function MiniCalendar() {
           <ChevronLeft size={13} strokeWidth={2} />
         </button>
         <span className="font-mono text-[11px] font-medium" style={{ color: "var(--text-primary)" }}>
-          {MONTHS[viewMonth]} {viewYear}
+          {MONTHS[locale][viewMonth]} {viewYear}
         </span>
         <button onClick={next} className="taskbar-icon rounded-md flex items-center justify-center" style={{ width: 28, height: 28 }}>
           <ChevronRight size={13} strokeWidth={2} />
         </button>
       </div>
       <div className="grid grid-cols-7 mb-1">
-        {DAYS.map(d => (
+        {DAYS[locale].map(d => (
           <div key={d} className="flex items-center justify-center font-mono text-[9px]" style={{ color: "var(--text-tertiary)", height: 22 }}>{d}</div>
         ))}
       </div>
@@ -90,6 +121,7 @@ const SOCIAL_LINKS = [
 
 export default function Sidebar() {
   const { isDark, toggleTheme, isMuted, toggleMute, locale, setLocale, terminalOpen, toggleTerminal } = useShell();
+  const t = T[locale];
   const [time, setTime] = useState("");
   const [date, setDate] = useState("");
   const sidebarRef = useRef<HTMLDivElement>(null);
@@ -139,14 +171,14 @@ export default function Sidebar() {
           href="/about"
           className="taskbar-icon flex items-center justify-center rounded-full overflow-hidden"
           style={{ width: 36, height: 36, flexShrink: 0, backgroundImage: `url('${isDark ? "/profile.png" : "/profile-light.png"}')`, backgroundSize: "cover", backgroundPosition: "center 20%" }}
-          title="About me"
+          title={t.aboutMe}
         />
         <div className="w-6" style={{ borderTop: "1px solid var(--separator)" }} />
         <Link
           href="/"
           className="taskbar-icon rounded-xl flex items-center justify-center"
           style={{ width: 38, height: 38 }}
-          title="Home"
+          title={t.home}
         >
           <Home size={16} strokeWidth={1.5} />
         </Link>
@@ -158,7 +190,7 @@ export default function Sidebar() {
             background: terminalOpen ? "var(--taskbar-icon-active-bg)" : undefined,
             color: terminalOpen ? "var(--taskbar-icon-hover)" : undefined,
           }}
-          title="Terminal ( ` )"
+          title={t.terminal}
         >
           <TerminalIcon size={16} strokeWidth={1.5} />
         </button>
@@ -169,18 +201,18 @@ export default function Sidebar() {
 
       {/* Bottom: system controls */}
       <div className="flex flex-col items-center gap-1.5">
-        <button onClick={toggleTheme} className="taskbar-icon rounded-xl flex items-center justify-center" style={{ width: 38, height: 38 }} title={isDark ? "Switch to light" : "Switch to dark"}>
+        <button onClick={toggleTheme} className="taskbar-icon rounded-xl flex items-center justify-center" style={{ width: 38, height: 38 }} title={isDark ? t.switchLight : t.switchDark}>
           {isDark ? <Sun size={15} strokeWidth={1.5} /> : <Moon size={15} strokeWidth={1.5} />}
         </button>
 
         <div className="relative">
-          <button onClick={toggleWifi} className="taskbar-icon rounded-lg flex items-center justify-center" style={{ width: 34, height: 34 }} title="Socials">
+          <button onClick={toggleWifi} className="taskbar-icon rounded-lg flex items-center justify-center" style={{ width: 34, height: 34 }} title={t.socials}>
             <Wifi size={14} strokeWidth={1.5} />
           </button>
           {showWifi && (
             <div className="absolute z-50 rounded-xl overflow-hidden"
               style={{ left: 42, bottom: 0, width: 200, background: "var(--window-bg)", border: "1px solid var(--window-border)", backdropFilter: "blur(32px)", boxShadow: "0 16px 48px rgba(0,0,0,0.18), 0 4px 12px rgba(0,0,0,0.1)" }}>
-              <div className="font-mono text-[9px] uppercase tracking-widest px-3 pt-3 pb-1.5" style={{ color: "var(--text-tertiary)", letterSpacing: "0.14em" }}>Find me online</div>
+              <div className="font-mono text-[9px] uppercase tracking-widest px-3 pt-3 pb-1.5" style={{ color: "var(--text-tertiary)", letterSpacing: "0.14em" }}>{t.findOnline}</div>
               <div className="flex flex-col pb-2">
                 {SOCIAL_LINKS.map((s) => (
                   <a key={s.id} href={s.url} target="_blank" rel="noopener noreferrer" className="flex items-center gap-3 px-3 py-2 transition-colors" style={{ textDecoration: "none" }}
@@ -201,7 +233,7 @@ export default function Sidebar() {
           )}
         </div>
 
-        <button onClick={toggleMute} className="taskbar-icon rounded-lg items-center justify-center hidden lg:flex" style={{ width: 34, height: 34 }} title={isMuted ? "Unmute" : "Mute"}>
+        <button onClick={toggleMute} className="taskbar-icon rounded-lg items-center justify-center hidden lg:flex" style={{ width: 34, height: 34 }} title={isMuted ? t.unmute : t.mute}>
           {isMuted ? <VolumeX size={14} strokeWidth={1.5} /> : <Volume2 size={14} strokeWidth={1.5} />}
         </button>
 
@@ -213,7 +245,7 @@ export default function Sidebar() {
           {showCalendar && (
             <div className="os-window absolute z-50 rounded-xl overflow-hidden"
               style={{ left: 56, bottom: 0, width: 220, padding: "12px", background: "var(--window-bg)", border: "1px solid var(--window-border)", backdropFilter: "blur(32px)", boxShadow: "0 16px 48px rgba(0,0,0,0.18), 0 4px 12px rgba(0,0,0,0.1)" }}>
-              <MiniCalendar />
+              <MiniCalendar locale={locale} />
             </div>
           )}
         </div>

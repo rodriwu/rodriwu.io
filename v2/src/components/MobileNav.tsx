@@ -8,14 +8,28 @@ import { Menu, X, Sun, Moon, Globe, Home } from "lucide-react";
 import { useShell } from "./context/ShellContext";
 
 const NAV_LINKS = [
-  { num: "01", label: "HOME",    href: "/",        hash: null },
-  { num: "02", label: "WORK",    href: "/",        hash: "work" },
-  { num: "03", label: "ABOUT",   href: "/about",   hash: null },
-  { num: "04", label: "CONTACT", href: "/",        hash: "contact" },
-];
+  { num: "01", key: "home",    href: "/",        hash: null },
+  { num: "02", key: "work",    href: "/",        hash: "work" },
+  { num: "03", key: "about",   href: "/about",   hash: null },
+  { num: "04", key: "contact", href: "/",        hash: "contact" },
+] as const;
+
+const T = {
+  en: {
+    home: "HOME", work: "WORK", about: "ABOUT", contact: "CONTACT",
+    homeAria: "Home", openMenu: "Open menu", closeMenu: "Close menu",
+    switchLight: "Switch to light", switchDark: "Switch to dark",
+  },
+  es: {
+    home: "INICIO", work: "PROYECTOS", about: "SOBRE MÍ", contact: "CONTACTO",
+    homeAria: "Inicio", openMenu: "Abrir menú", closeMenu: "Cerrar menú",
+    switchLight: "Cambiar a claro", switchDark: "Cambiar a oscuro",
+  },
+} as const;
 
 export default function MobileNav() {
   const { isDark, toggleTheme, locale, setLocale } = useShell();
+  const t = T[locale];
   const pathname = usePathname();
   const router = useRouter();
   const [open, setOpen] = useState(false);
@@ -76,14 +90,14 @@ export default function MobileNav() {
             backgroundSize: "cover",
             backgroundPosition: "center 20%",
           }}
-          aria-label="Home"
+          aria-label={t.homeAria}
         />
 
         {/* Right side: Home + Burger */}
         <div style={{ display: "flex", alignItems: "center", gap: 4 }}>
           <Link
             href="/"
-            aria-label="Home"
+            aria-label={t.homeAria}
             style={{
               width: 38,
               height: 38,
@@ -99,7 +113,7 @@ export default function MobileNav() {
 
           <button
             onClick={() => setOpen((o) => !o)}
-            aria-label={open ? "Close menu" : "Open menu"}
+            aria-label={open ? t.closeMenu : t.openMenu}
             style={{
               width: 38,
               height: 38,
@@ -160,7 +174,7 @@ export default function MobileNav() {
               />
               <button
                 onClick={() => setOpen(false)}
-                aria-label="Close menu"
+                aria-label={t.closeMenu}
                 style={{
                   width: 38,
                   height: 38,
@@ -190,9 +204,9 @@ export default function MobileNav() {
                 gap: "clamp(20px, 4vh, 32px)",
               }}
             >
-              {NAV_LINKS.map(({ num, label, href, hash }, i) => (
+              {NAV_LINKS.map(({ num, key, href, hash }, i) => (
                 <motion.button
-                  key={label}
+                  key={key}
                   initial={{ opacity: 0, y: 20 }}
                   animate={{ opacity: 1, y: 0 }}
                   transition={{ delay: 0.06 + i * 0.05, duration: 0.32, ease: [0.16, 1, 0.3, 1] }}
@@ -229,7 +243,7 @@ export default function MobileNav() {
                       lineHeight: 1,
                     }}
                   >
-                    {label}
+                    {t[key]}
                   </span>
                 </motion.button>
               ))}
@@ -261,7 +275,7 @@ export default function MobileNav() {
                   color: ink,
                   cursor: "pointer",
                 }}
-                aria-label={isDark ? "Switch to light" : "Switch to dark"}
+                aria-label={isDark ? t.switchLight : t.switchDark}
               >
                 {isDark ? <Sun size={16} strokeWidth={1.5} /> : <Moon size={16} strokeWidth={1.5} />}
               </button>

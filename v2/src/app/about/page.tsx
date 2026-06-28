@@ -4,42 +4,106 @@ import { motion } from "framer-motion";
 import { ArrowDown, ArrowUpRight } from "lucide-react";
 import { useShell } from "@/components/context/ShellContext";
 
-const SKILLS = [
-  "User Interface", "User Experience", "Visual Identity", "Platform Implementation",
-  "Figma", "Adobe Suite", "Framer", "Lottie Animation",
-  "Design Systems", "CMS Templates", "HTML & CSS", "Tailwind CSS",
-  "Wix · Webflow", "Elementor", "Social Media Design",
-];
+const SKILLS = {
+  en: [
+    "User Interface", "User Experience", "Visual Identity", "Platform Implementation",
+    "Figma", "Adobe Suite", "Framer", "Lottie Animation",
+    "Design Systems", "CMS Templates", "HTML & CSS", "Tailwind CSS",
+    "Wix · Webflow", "Elementor", "Social Media Design",
+  ],
+  es: [
+    "Interfaz de Usuario", "Experiencia de Usuario", "Identidad Visual", "Implementación de Plataformas",
+    "Figma", "Adobe Suite", "Framer", "Animación Lottie",
+    "Sistemas de Diseño", "Plantillas CMS", "HTML & CSS", "Tailwind CSS",
+    "Wix · Webflow", "Elementor", "Diseño para Redes Sociales",
+  ],
+} as const;
 
-const EXPERIENCE = [
-  {
-    years: "2024 – Present",
-    company: "Omni Common",
-    role: "Sr. Product Designer & Platform Integrator",
-    desc: "Lead end-to-end UX/UI design for U.S.-based clients including Talitha Coffee, NumberBarn, and RapidOs. Bridge design, development, and strategy to ship conversion-focused digital products.",
+const EXPERIENCE = {
+  en: [
+    {
+      years: "2024 – Present",
+      company: "Omni Common",
+      role: "Sr. Product Designer & Platform Integrator",
+      desc: "Lead end-to-end UX/UI design for U.S.-based clients including Talitha Coffee, NumberBarn, and RapidOs. Bridge design, development, and strategy to ship conversion-focused digital products.",
+    },
+    {
+      years: "2022 – 2025",
+      company: "Porch Moving Group",
+      role: "Product Designer (Remote)",
+      desc: "Led UX and marketing design for Porch, HireAHelper, Permit Puller, Moving Place, and MovingStaffers. Built and maintained design systems, style guides, wireframes, and web prototypes.",
+    },
+    {
+      years: "2021 – 2022",
+      company: "HireAHelper",
+      role: "UX Design Intern",
+      desc: "Worked with diverse clients on projects ranging from web design to branding, creating visually appealing and effective solutions.",
+    },
+    {
+      years: "2018 – 2019",
+      company: "Tirza Moda Creativa",
+      role: "Graphic Design Intern",
+      desc: "Managed social media content and handled photography and editing for catalog images at a fashion design studio.",
+    },
+  ],
+  es: [
+    {
+      years: "2024 – Presente",
+      company: "Omni Common",
+      role: "Diseñador de Producto Sr. e Integrador de Plataformas",
+      desc: "Lidero el diseño UX/UI de principio a fin para clientes en EE.UU. como Talitha Coffee, NumberBarn y RapidOs. Conecto diseño, desarrollo y estrategia para lanzar productos digitales enfocados en conversión.",
+    },
+    {
+      years: "2022 – 2025",
+      company: "Porch Moving Group",
+      role: "Diseñador de Producto (Remoto)",
+      desc: "Lideré el diseño UX y de marketing para Porch, HireAHelper, Permit Puller, Moving Place y MovingStaffers. Construí y mantuve sistemas de diseño, guías de estilo, wireframes y prototipos web.",
+    },
+    {
+      years: "2021 – 2022",
+      company: "HireAHelper",
+      role: "Pasante de Diseño UX",
+      desc: "Trabajé con diversos clientes en proyectos que iban desde diseño web hasta branding, creando soluciones visualmente atractivas y efectivas.",
+    },
+    {
+      years: "2018 – 2019",
+      company: "Tirza Moda Creativa",
+      role: "Pasante de Diseño Gráfico",
+      desc: "Gestioné contenido para redes sociales y me encargué de la fotografía y edición de imágenes de catálogo en un estudio de diseño de moda.",
+    },
+  ],
+} as const;
+
+const T = {
+  en: {
+    pageLabel: "ABOUT.me",
+    openToWork: "OPEN·TO·WORK",
+    bio1: "Visual & Product Designer with 7+ years of experience shipping digital products end-to-end — from brand identity and UI design to platform implementation. Currently leading UX/UI at Omni Common, working with U.S.-based growth companies.",
+    bio2: "Based in Mexico. Open to freelance projects, full-time roles, and interesting collaborations.",
+    skillsLabel: "SKILLS.tools",
+    experienceLabel: "EXPERIENCE.log",
+    ctaPrompt: "Want to work together?",
+    ctaPrimary: "Get in touch",
+    ctaSecondary: "Download résumé",
   },
-  {
-    years: "2022 – 2025",
-    company: "Porch Moving Group",
-    role: "Product Designer (Remote)",
-    desc: "Led UX and marketing design for Porch, HireAHelper, Permit Puller, Moving Place, and MovingStaffers. Built and maintained design systems, style guides, wireframes, and web prototypes.",
+  es: {
+    pageLabel: "SOBRE.mí",
+    openToWork: "DISPONIBLE·PARA·TRABAJAR",
+    bio1: "Diseñador Visual y de Producto con más de 7 años de experiencia llevando productos digitales de principio a fin — desde identidad de marca y diseño de UI hasta la implementación en plataforma. Actualmente lidero UX/UI en Omni Common, trabajando con empresas de crecimiento en EE.UU.",
+    bio2: "Radicado en México. Abierto a proyectos freelance, posiciones de tiempo completo y colaboraciones interesantes.",
+    skillsLabel: "HABILIDADES.tools",
+    experienceLabel: "EXPERIENCIA.log",
+    ctaPrompt: "¿Quieres que trabajemos juntos?",
+    ctaPrimary: "Conversemos",
+    ctaSecondary: "Descargar CV",
   },
-  {
-    years: "2021 – 2022",
-    company: "HireAHelper",
-    role: "UX Design Intern",
-    desc: "Worked with diverse clients on projects ranging from web design to branding, creating visually appealing and effective solutions.",
-  },
-  {
-    years: "2018 – 2019",
-    company: "Tirza Moda Creativa",
-    role: "Graphic Design Intern",
-    desc: "Managed social media content and handled photography and editing for catalog images at a fashion design studio.",
-  },
-];
+} as const;
 
 export default function AboutPage() {
-  const { isDark } = useShell();
+  const { isDark, locale } = useShell();
+  const t = T[locale];
+  const skills = SKILLS[locale];
+  const experience = EXPERIENCE[locale];
 
   const ink  = isDark ? "rgba(255,255,255,0.92)" : "rgba(10,12,35,0.90)";
   const body = isDark ? "rgba(255,255,255,0.64)" : "rgba(10,12,35,0.76)";
@@ -66,7 +130,7 @@ export default function AboutPage() {
         className="font-mono"
         style={{ fontSize: 10, letterSpacing: "0.18em", color: dim, marginBottom: "clamp(32px, 5vh, 56px)" }}
       >
-        ABOUT.me
+        {t.pageLabel}
       </motion.div>
 
       {/* ── Section 1: Photo + Bio ── */}
@@ -117,7 +181,7 @@ export default function AboutPage() {
             }}
           >
             <span style={{ width: 6, height: 6, borderRadius: "50%", background: "#4ade80", display: "inline-block", flexShrink: 0 }} />
-            OPEN·TO·WORK
+            {t.openToWork}
           </div>
 
           <h1
@@ -135,10 +199,10 @@ export default function AboutPage() {
           </h1>
 
           <p style={{ fontSize: "clamp(15px, 1.8vw, 17px)", lineHeight: 1.65, color: body, marginBottom: 16 }}>
-            Visual & Product Designer with 7+ years of experience shipping digital products end-to-end — from brand identity and UI design to platform implementation. Currently leading UX/UI at Omni Common, working with U.S.-based growth companies.
+            {t.bio1}
           </p>
           <p style={{ fontSize: "clamp(15px, 1.8vw, 17px)", lineHeight: 1.65, color: body }}>
-            Based in Mexico. Open to freelance projects, full-time roles, and interesting collaborations.
+            {t.bio2}
           </p>
         </div>
       </motion.div>
@@ -155,7 +219,7 @@ export default function AboutPage() {
         style={{ marginBottom: "clamp(56px, 8vh, 96px)" }}
       >
         <div className="font-mono" style={{ fontSize: 10, letterSpacing: "0.18em", color: dim, marginBottom: 28 }}>
-          SKILLS.tools
+          {t.skillsLabel}
         </div>
 
         <div
@@ -165,7 +229,7 @@ export default function AboutPage() {
             gap: "10px 10px",
           }}
         >
-          {SKILLS.map((skill) => (
+          {skills.map((skill) => (
             <span
               key={skill}
               className="font-mono"
@@ -197,11 +261,11 @@ export default function AboutPage() {
         style={{ marginBottom: "clamp(64px, 9vh, 112px)" }}
       >
         <div className="font-mono" style={{ fontSize: 10, letterSpacing: "0.18em", color: dim, marginBottom: 36 }}>
-          EXPERIENCE.log
+          {t.experienceLabel}
         </div>
 
         <div style={{ display: "flex", flexDirection: "column", gap: "clamp(32px, 5vh, 48px)" }}>
-          {EXPERIENCE.map(({ years, company, role, desc }, i) => (
+          {experience.map(({ years, company, role, desc }, i) => (
             <motion.div
               key={i}
               initial={{ opacity: 0, y: 12 }}
@@ -244,7 +308,7 @@ export default function AboutPage() {
         style={{ textAlign: "center" }}
       >
         <p style={{ fontSize: 15, color: dim, marginBottom: 24 }} className="font-mono">
-          Want to work together?
+          {t.ctaPrompt}
         </p>
         <div style={{ display: "flex", alignItems: "center", justifyContent: "center", gap: 12, flexWrap: "wrap" }}>
           <motion.a
@@ -270,7 +334,7 @@ export default function AboutPage() {
               boxShadow: "0 6px 18px rgba(207,242,74,0.28)",
             }}
           >
-            Get in touch
+            {t.ctaPrimary}
             <ArrowDown size={14} strokeWidth={1.8} />
           </motion.a>
 
@@ -297,7 +361,7 @@ export default function AboutPage() {
               userSelect: "none",
             }}
           >
-            Download résumé
+            {t.ctaSecondary}
             <ArrowUpRight size={14} strokeWidth={1.6} />
           </motion.a>
         </div>

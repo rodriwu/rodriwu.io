@@ -4,6 +4,7 @@ import Link from "next/link";
 import { motion } from "framer-motion";
 import { ArrowLeft, ArrowUpRight } from "lucide-react";
 import { CASE_STUDIES, type CaseStudy } from "@/data/caseStudies";
+import { getCaseStudies } from "@/data/caseStudies.i18n";
 import { useShell } from "@/components/context/ShellContext";
 
 /* Sort key: extract [endYear, startYear] from a `year` string ("2024 to 2025",
@@ -17,8 +18,32 @@ function yearKey(s: string): [number, number] {
   return [end, start];
 }
 
+const T = {
+  en: {
+    back: "BACK",
+    index: (n: string) => `INDEX · ${n} PROJECTS`,
+    eyebrow: "Selected work",
+    heading: "All the work.",
+    intro: "A collection of projects: brand identity, product design, UX, digital platforms. Not all are formal write-ups; some just show the output.",
+    footer: "Some of these projects are also documented on Behance and Dribbble.",
+    unavailable: (name: string) => `${name} (unavailable)`,
+    newTab: (name: string) => `${name} (opens in new tab)`,
+  },
+  es: {
+    back: "VOLVER",
+    index: (n: string) => `ÍNDICE · ${n} PROYECTOS`,
+    eyebrow: "Trabajo seleccionado",
+    heading: "Todo el trabajo.",
+    intro: "Una colección de proyectos: identidad de marca, diseño de producto, UX, plataformas digitales. No todos tienen documentación formal; algunos solo muestran el resultado.",
+    footer: "Algunos de estos proyectos también están documentados en Behance y Dribbble.",
+    unavailable: (name: string) => `${name} (no disponible)`,
+    newTab: (name: string) => `${name} (se abre en nueva pestaña)`,
+  },
+} as const;
+
 export default function WorkPage() {
-  const { isDark, openUnavailable } = useShell();
+  const { isDark, openUnavailable, locale } = useShell();
+  const t = T[locale];
 
   const accent = isDark ? "#CFF24A" : "#7B5CF6";
   const ink    = isDark ? "rgba(255,255,255,0.94)" : "rgba(10,12,35,0.92)";
@@ -27,7 +52,8 @@ export default function WorkPage() {
   const fade   = isDark ? "rgba(255,255,255,0.10)" : "rgba(10,12,35,0.12)";
 
   const pad = (n: number) => String(n).padStart(2, "0");
-  const sorted: CaseStudy[] = [...CASE_STUDIES].sort((a, b) => {
+  const allCases = getCaseStudies(locale);
+  const sorted: CaseStudy[] = [...allCases].sort((a, b) => {
     const [aEnd, aStart] = yearKey(a.year);
     const [bEnd, bStart] = yearKey(b.year);
     return bEnd - aEnd || bStart - aStart;
@@ -44,17 +70,17 @@ export default function WorkPage() {
             style={{ fontSize: 11, letterSpacing: "0.14em", color: dim, textDecoration: "none" }}
           >
             <ArrowLeft size={13} strokeWidth={1.8} />
-            BACK
+            {t.back}
           </Link>
           <span className="font-mono" style={{ fontSize: 10, letterSpacing: "0.16em", color: dim }}>
-            INDEX · {pad(CASE_STUDIES.length)} PROJECTS
+            {t.index(pad(allCases.length))}
           </span>
         </div>
 
         {/* Page heading */}
         <header style={{ marginBottom: 64 }}>
           <p className="font-mono" style={{ fontSize: 10, letterSpacing: "0.22em", color: dim, marginBottom: 14, textTransform: "uppercase" }}>
-            Selected work
+            {t.eyebrow}
           </p>
           <h1
             className="font-mono"
@@ -68,10 +94,10 @@ export default function WorkPage() {
               maxWidth: 920,
             }}
           >
-            All the work.
+            {t.heading}
           </h1>
           <p style={{ fontSize: 17, lineHeight: 1.66, color: body, maxWidth: 720 }}>
-            A collection of projects: brand identity, product design, UX, digital platforms. Not all are formal write-ups; some just show the output.
+            {t.intro}
           </p>
         </header>
 
@@ -175,7 +201,7 @@ export default function WorkPage() {
                   <button
                     type="button"
                     onClick={() => openUnavailable(cs.shortTitle)}
-                    aria-label={`${cs.shortTitle} (unavailable)`}
+                    aria-label={t.unavailable(cs.shortTitle)}
                     className="work-row"
                     style={{ ...rowStyle, background: "transparent", border: "none", width: "100%", font: "inherit", cursor: "pointer", textAlign: "left" }}
                   >
@@ -186,7 +212,7 @@ export default function WorkPage() {
                     href={cs.url}
                     target="_blank"
                     rel="noopener noreferrer"
-                    aria-label={`${cs.shortTitle} (opens in new tab)`}
+                    aria-label={t.newTab(cs.shortTitle)}
                     className="work-row"
                     style={rowStyle}
                   >
@@ -217,7 +243,7 @@ export default function WorkPage() {
             lineHeight: 1.6,
           }}
         >
-          Some of these projects are also documented on Behance and Dribbble.
+          {t.footer}
         </p>
       </article>
 

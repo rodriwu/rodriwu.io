@@ -4,7 +4,8 @@ import Link from "next/link";
 import { useEffect, useRef, useState } from "react";
 import { motion, useMotionValue, useTransform } from "framer-motion";
 import { ArrowDown, ArrowUpRight } from "lucide-react";
-import { CASE_STUDIES } from "@/data/caseStudies";
+import { getCaseStudies } from "@/data/caseStudies.i18n";
+import { type CaseStudy } from "@/data/caseStudies";
 import { useShell } from "./context/ShellContext";
 import CaseCard from "./panels/CaseStudyPanel";
 
@@ -13,14 +14,14 @@ const T = {
   es: { label: "TRABAJO.seleccionado", footer: "scroll · o arrastra la barra", skipToContact: "Ir al contacto", viewAll: "Ver todo", viewAllSub: "Archivo completo de proyectos" },
 };
 
-/* Cases visible on the home gallery. Any case with `homeGallery: false` is
-   hidden here and only reachable via the /work page index. */
-const HOME_CASES = CASE_STUDIES.filter((c) => c.homeGallery !== false);
-
 /* Pinned horizontal-scroll gallery on desktop; 2-col grid on mobile. */
 export default function Gallery() {
   const { isDark, locale } = useShell();
   const t = T[locale];
+
+  /* Cases visible on the home gallery. Any case with `homeGallery: false` is
+     hidden here and only reachable via the /work page index. */
+  const homeCases = getCaseStudies(locale).filter((c) => c.homeGallery !== false);
 
   const [isMobile, setIsMobile] = useState(false);
 
@@ -31,14 +32,15 @@ export default function Gallery() {
     return () => window.removeEventListener("resize", update);
   }, []);
 
-  if (isMobile) return <MobileGrid isDark={isDark} t={t} />;
-  return <DesktopStrip isDark={isDark} t={t} />;
+  if (isMobile) return <MobileGrid isDark={isDark} t={t} homeCases={homeCases} />;
+  return <DesktopStrip isDark={isDark} t={t} homeCases={homeCases} />;
 }
 
 /* ──────────────────────────────────────────────────────────────
    Desktop — pinned sticky section with horizontal-translating strip
    ────────────────────────────────────────────────────────────── */
-function DesktopStrip({ isDark, t }: { isDark: boolean; t: typeof T["en"] }) {
+function DesktopStrip({ isDark, t, homeCases }: { isDark: boolean; t: typeof T["en"]; homeCases: CaseStudy[] }) {
+  const HOME_CASES = homeCases;
   const sectionRef = useRef<HTMLElement>(null);
   const stripRef = useRef<HTMLDivElement>(null);
 
@@ -445,7 +447,8 @@ function Scrubber({
 /* ──────────────────────────────────────────────────────────────
    Mobile — 2-col grid with label below each card
    ────────────────────────────────────────────────────────────── */
-function MobileGrid({ isDark, t }: { isDark: boolean; t: typeof T["en"] }) {
+function MobileGrid({ isDark, t, homeCases }: { isDark: boolean; t: typeof T["en"]; homeCases: CaseStudy[] }) {
+  const HOME_CASES = homeCases;
   const dim  = isDark ? "rgba(255,255,255,0.42)" : "rgba(10,12,35,0.60)";
   const ink  = isDark ? "rgba(255,255,255,0.88)" : "rgba(10,12,35,0.88)";
   const fade = isDark ? "rgba(255,255,255,0.20)" : "rgba(10,12,35,0.36)";

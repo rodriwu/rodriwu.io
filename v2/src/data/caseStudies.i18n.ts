@@ -82,10 +82,19 @@ function mergeBlock(block: CaseBlock, override?: BlockOverride): CaseBlock {
      it was in English (the override never sets `type`). */
   const merged = { ...block, ...override } as unknown as CaseBlock;
 
-  /* For blocks with `items: object[]`, merge items by index. */
+  /* For blocks with `items: object[]`, merge items by index.
+     Skip the merge for string-array items (e.g. `list` blocks) — the initial
+     spread already placed the override strings in `merged.items`, and spreading
+     a string as a Record gives character-indexed garbage that breaks rendering. */
   const srcItems = (block as { items?: unknown[] }).items;
   const ovrItems = (override as { items?: unknown[] }).items;
-  if (Array.isArray(srcItems) && Array.isArray(ovrItems)) {
+  if (
+    Array.isArray(srcItems) &&
+    Array.isArray(ovrItems) &&
+    srcItems.length > 0 &&
+    typeof srcItems[0] === "object" &&
+    srcItems[0] !== null
+  ) {
     const mergedItems = srcItems.map((it, i) => ({
       ...(it as Record<string, unknown>),
       ...((ovrItems[i] as Record<string, unknown>) ?? {}),

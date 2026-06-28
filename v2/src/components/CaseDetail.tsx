@@ -1798,11 +1798,14 @@ function Ticker({
   const loop = [...items, ...items];
 
   return (
+    /* Outer div clips overflow without mask-image — iOS Safari breaks
+       overflow:hidden when mask-image is on the same element, causing
+       the max-content track to escape and add horizontal page scroll. */
+    <div style={{ overflow: "hidden", width: "100%" }}>
     <div
       style={{
         position: "relative",
         width: "100%",
-        overflow: "hidden",
         maskImage: "linear-gradient(to right, transparent 0%, #000 6%, #000 94%, transparent 100%)",
         WebkitMaskImage: "linear-gradient(to right, transparent 0%, #000 6%, #000 94%, transparent 100%)",
       }}
@@ -1849,6 +1852,7 @@ function Ticker({
           .rw-ticker-track { animation: none; }
         }
       `}</style>
+    </div>
     </div>
   );
 }

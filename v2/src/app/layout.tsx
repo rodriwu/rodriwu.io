@@ -1,5 +1,6 @@
 import type { Metadata, Viewport } from "next";
 import { GeistSans } from "geist/font/sans";
+import { GoogleAnalytics } from "@next/third-parties/google";
 import Shell from "@/components/Shell";
 import "./globals.css";
 
@@ -35,6 +36,7 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
       <body className="antialiased">
         <Shell>{children}</Shell>
       </body>
+      <GoogleAnalytics gaId="G-Y1RJYGJBFX" />
     </html>
   );
 }

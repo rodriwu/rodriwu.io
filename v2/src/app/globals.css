@@ -11,6 +11,10 @@
   box-sizing: border-box;
 }
 
+img, video {
+  max-width: 100%;
+}
+
 button,
 a,
 [data-hover],
@@ -43,6 +47,7 @@ body {
   margin: 0;
   padding: 0;
   color: #0a0a0a;
+  overflow-x: hidden;
 }
 
 /* ── v2 — Japanese-notebook dot grid backdrop ──

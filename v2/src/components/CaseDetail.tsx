@@ -1,7 +1,7 @@
 "use client";
 
 import Link from "next/link";
-import { useEffect, useRef, useState } from "react";
+import { useEffect, useLayoutEffect, useRef, useState } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import { ArrowLeft, ArrowRight, ArrowUp, ArrowUpRight, X, Check, Dot } from "lucide-react";
 import { useShell } from "./context/ShellContext";
@@ -239,8 +239,8 @@ function Hero({
   cs: CaseStudy; accent: string; ink: string; body: string;
   dim: string; fade: string; cardBg: string; isDark: boolean;
 }) {
-  const [isMobile, setIsMobile] = useState(false);
-  useEffect(() => {
+  const [isMobile, setIsMobile] = useState(true);
+  useLayoutEffect(() => {
     const update = () => setIsMobile(window.innerWidth < 768);
     update();
     window.addEventListener("resize", update);
@@ -357,12 +357,12 @@ function Body({
   const [activeId, setActiveId] = useState<string>(sections[0]?.id ?? "");
   const [pastHero, setPastHero] = useState(false);
   const bodyRootRef = useRef<HTMLDivElement>(null);
-  const [isWide, setIsWide] = useState(true);
+  const [isWide, setIsWide] = useState(false);
   const [tocCovered, setTocCovered] = useState(false);
   const [lightbox, setLightbox] = useState<{ src: string; alt: string } | null>(null);
   const openLightbox = (src: string, alt?: string) => setLightbox({ src, alt: alt ?? "" });
 
-  useEffect(() => {
+  useLayoutEffect(() => {
     const update = () => setIsWide(window.innerWidth >= 1024);
     update();
     window.addEventListener("resize", update);
@@ -436,7 +436,7 @@ function Body({
     <>
     {lightbox && <LightboxOverlay src={lightbox.src} alt={lightbox.alt} onClose={() => setLightbox(null)} />}
     <div ref={bodyRootRef} style={{ maxWidth: 1240, margin: "0 auto", padding: "0 var(--rw-body-pad)" }}>
-      <div style={{ display: "grid", gridTemplateColumns: isWide ? "220px 1fr" : "1fr", gap: isWide ? 72 : 0, alignItems: "start" }}>
+      <div style={{ display: "grid", gridTemplateColumns: isWide ? "220px minmax(0, 1fr)" : "minmax(0, 1fr)", gap: isWide ? 72 : 0, alignItems: "start" }}>
 
         {/* Desktop sticky TOC */}
         {isWide && (
@@ -1903,8 +1903,8 @@ function Conclusion({
   conclusion: { quote: string; body?: string; signoff?: string };
   ink: string; body: string; dim: string; fade: string; accent: string; isDark: boolean;
 }) {
-  const [isMobile, setIsMobile] = useState(false);
-  useEffect(() => {
+  const [isMobile, setIsMobile] = useState(true);
+  useLayoutEffect(() => {
     const update = () => setIsMobile(window.innerWidth < 768);
     update();
     window.addEventListener("resize", update);

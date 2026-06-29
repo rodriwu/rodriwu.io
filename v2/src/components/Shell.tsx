@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useEffect, useLayoutEffect, useState } from "react";
 import MusicWidget from "@/components/MusicWidget";
 import { ShellProvider, useShell } from "./context/ShellContext";
 import Sidebar from "./Sidebar";
@@ -16,10 +16,10 @@ function ShellInner({ children }: { children: React.ReactNode }) {
     togglePlay, toggleMute, setVolume, seek,
   } = useShell();
 
-  const [canvasW, setCanvasW] = useState(1440);
-  const [canvasH, setCanvasH] = useState(900);
+  const [canvasW, setCanvasW] = useState(0);
+  const [canvasH, setCanvasH] = useState(0);
 
-  useEffect(() => {
+  useLayoutEffect(() => {
     const update = () => {
       setCanvasW(window.innerWidth);
       setCanvasH(window.innerHeight);
